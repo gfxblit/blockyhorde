@@ -300,10 +300,11 @@
             difficulty: {
                 intervalReduction: 0.1,
                 timePerReduction: 30,
-                // Aggressive scaling factors
-                speedMultiplierPerMinute: 0.5,    // +50% speed per minute
-                damageMultiplierPerMinute: 0.4,   // +40% damage per minute
-                hpMultiplierPerMinute: 0.3        // +30% HP per minute
+                // Aggressive continuous scaling targeting ~2 min survival
+                speedMultiplierPerMinute: 1.0,    // +100% speed per minute
+                damageMultiplierPerMinute: 0.8,   // +80% damage per minute
+                hpMultiplierPerMinute: 0.6,       // +60% HP per minute
+                spawnQuadraticFactor: 350         // Quadratic spawn rate scaling
             }
         };
 
@@ -452,8 +453,8 @@
             const x = Math.sin(seed) * 10000;
             return x - Math.floor(x);
         }
-
-        function createVoxelTexture(ctx, x, y, size, baseColor) {
+      
+        function createVoxelTexture(ctx, screenX, screenY, worldX, worldY, size, baseColor) {
             // Create a simple voxel/block texture with shading
             const colors = {
                 base: baseColor,
@@ -464,7 +465,7 @@
 
             // Main face
             ctx.fillStyle = colors.base;
-            ctx.fillRect(x, y, size, size);
+            ctx.fillRect(screenX, screenY, size, size);
 
             // Add pixel detail pattern for texture (using seeded random for consistent appearance)
             ctx.fillStyle = colors.light;
@@ -480,21 +481,21 @@
 
             // Top highlight
             ctx.fillStyle = colors.light;
-            ctx.fillRect(x, y, size, 3);
+            ctx.fillRect(screenX, screenY, size, 3);
 
             // Left highlight
-            ctx.fillRect(x, y, 3, size);
+            ctx.fillRect(screenX, screenY, 3, size);
 
             // Bottom shadow
             ctx.fillStyle = colors.dark;
-            ctx.fillRect(x, y + size - 3, size, 3);
+            ctx.fillRect(screenX, screenY + size - 3, size, 3);
 
             // Right shadow
-            ctx.fillRect(x + size - 3, y, 3, size);
+            ctx.fillRect(screenX + size - 3, screenY, 3, size);
 
             // Corner highlights
             ctx.fillStyle = colors.darkest;
-            ctx.fillRect(x + size - 3, y + size - 3, 3, 3);
+            ctx.fillRect(screenX + size - 3, screenY + size - 3, 3, 3);
         }
 
         function adjustBrightness(color, amount) {
@@ -512,11 +513,12 @@
         }
 
         function drawPlayer() {
-            const screenX = player.worldX - gameState.camera.x;
-            const screenY = player.worldY - gameState.camera.y;
+            // Player is always centered on screen since camera follows them
+            const screenX = (CONFIG.canvas.width - CONFIG.player.size) / 2;
+            const screenY = (CONFIG.canvas.height - CONFIG.player.size) / 2;
 
             // Draw player as a voxel character head
-            createVoxelTexture(ctx, screenX, screenY, CONFIG.player.size, CONFIG.player.color);
+            createVoxelTexture(ctx, screenX, screenY, player.worldX, player.worldY, CONFIG.player.size, CONFIG.player.color);
 
             // Add simple face details
             ctx.fillStyle = '#000';
@@ -538,7 +540,7 @@
             }
 
             // Draw enemy as a zombie-like voxel
-            createVoxelTexture(ctx, screenX, screenY, CONFIG.enemy.size, '#90cc90');
+            createVoxelTexture(ctx, screenX, screenY, enemy.x, enemy.y, CONFIG.enemy.size, '#90cc90');
 
             // Add zombie face details
             ctx.fillStyle = '#000';
@@ -584,7 +586,7 @@
 
                         // Alternate grass colors for texture
                         const baseColor = ((x / tileSize + y / tileSize) % 2 === 0) ? '#7cbd6e' : '#6ead5f';
-                        createVoxelTexture(ctx, screenX, screenY, tileSize, baseColor);
+                        createVoxelTexture(ctx, screenX, screenY, x, y, tileSize, baseColor);
                     }
                 }
             }
@@ -767,26 +769,20 @@
         function updateDifficulty() {
             const timeInSeconds = (gameState.currentTime - gameState.startTime) / 1000;
             const timeInMinutes = timeInSeconds / 60;
-            const difficultyLevel = Math.floor(timeInSeconds / CONFIG.difficulty.timePerReduction);
 
-            // Calculate multipliers based on time (exponential growth at 5 min mark)
+            // Continuous scaling - all multipliers increase smoothly over time
+            // Targeting ~2 minute survival time with aggressive scaling
             difficultyMultipliers.speed = 1.0 + (timeInMinutes * CONFIG.difficulty.speedMultiplierPerMinute);
             difficultyMultipliers.damage = 1.0 + (timeInMinutes * CONFIG.difficulty.damageMultiplierPerMinute);
             difficultyMultipliers.hp = 1.0 + (timeInMinutes * CONFIG.difficulty.hpMultiplierPerMinute);
 
-            // Extremely aggressive spawn rate scaling (quadratic after 3 minutes)
-            // At 5 min: ~150ms spawn interval (6-7 enemies/sec)
-            let spawnReduction;
-            if (timeInMinutes <= 3) {
-                spawnReduction = difficultyLevel * 50; // Linear for first 3 min
-            } else {
-                // Quadratic scaling after 3 min
-                const excessTime = timeInMinutes - 3;
-                spawnReduction = (6 * 50) + (excessTime * excessTime * 200);
-            }
+            // Continuous quadratic spawn rate scaling from the start
+            // At 1 min: ~1150ms spawn interval (~0.87 enemies/sec)
+            // At 2 min: ~100ms spawn interval (10 enemies/sec)
+            const spawnReduction = timeInMinutes * timeInMinutes * CONFIG.difficulty.spawnQuadraticFactor;
 
             currentSpawnInterval = Math.max(
-                100,  // Extreme minimum: 10 enemies/sec
+                100,  // Minimum: 10 enemies/sec
                 CONFIG.enemy.initialSpawnInterval - spawnReduction
             );
         }
