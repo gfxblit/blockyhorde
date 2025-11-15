@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Blocky Horde - Voxel Survival</title>
     <style>
         * {
@@ -19,6 +21,9 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         #gameContainer {
@@ -132,6 +137,89 @@
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
             text-align: center;
         }
+
+        #touchControls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+            display: none;
+            z-index: 15;
+            pointer-events: all;
+        }
+
+        #joystickBase {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(100, 100, 100, 0.3), rgba(50, 50, 50, 0.5));
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #joystickStick {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(200, 200, 200, 0.7), rgba(100, 100, 100, 0.7));
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease-out;
+        }
+
+        @media (max-width: 850px) {
+            #gameContainer {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+            }
+
+            .instructions.desktop {
+                display: none;
+            }
+
+            #touchControls {
+                display: block;
+            }
+
+            #ui {
+                font-size: 14px;
+            }
+
+            .stat {
+                font-size: 16px;
+            }
+
+            .stat-label {
+                font-size: 12px;
+            }
+
+            #healthBar {
+                width: 150px;
+                height: 20px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            #touchControls {
+                width: 120px;
+                height: 120px;
+            }
+
+            #joystickStick {
+                width: 50px;
+                height: 50px;
+            }
+
+            .instructions {
+                font-size: 12px;
+                bottom: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -160,8 +248,18 @@
             </div>
         </div>
 
-        <div class="instructions">
+        <div class="instructions desktop">
             WASD or Arrow Keys to Move | Auto-Attack Active | Survive!
+        </div>
+
+        <div class="instructions mobile" style="display: none;">
+            Use Joystick to Move | Auto-Attack Active | Survive!
+        </div>
+
+        <div id="touchControls">
+            <div id="joystickBase">
+                <div id="joystickStick"></div>
+            </div>
         </div>
 
         <div id="gameOver">
@@ -220,7 +318,14 @@
             kills: 0,
             lastUpdate: 0,
             keys: {},
-            camera: { x: 0, y: 0 }
+            camera: { x: 0, y: 0 },
+            touch: {
+                active: false,
+                dx: 0,
+                dy: 0,
+                startX: 0,
+                startY: 0
+            }
         };
 
         // Player
@@ -252,6 +357,83 @@
         document.addEventListener('keyup', (e) => {
             gameState.keys[e.key.toLowerCase()] = false;
         });
+
+        // Touch Controls
+        const joystickBase = document.getElementById('joystickBase');
+        const joystickStick = document.getElementById('joystickStick');
+        const maxJoystickDistance = 45; // Maximum distance the stick can move from center
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = joystickBase.getBoundingClientRect();
+
+            gameState.touch.active = true;
+            gameState.touch.startX = rect.left + rect.width / 2;
+            gameState.touch.startY = rect.top + rect.height / 2;
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!gameState.touch.active) return;
+
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - gameState.touch.startX;
+            const deltaY = touch.clientY - gameState.touch.startY;
+
+            // Calculate distance from center
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            // Limit the joystick movement
+            let normalizedDX = deltaX;
+            let normalizedDY = deltaY;
+
+            if (distance > maxJoystickDistance) {
+                const angle = Math.atan2(deltaY, deltaX);
+                normalizedDX = Math.cos(angle) * maxJoystickDistance;
+                normalizedDY = Math.sin(angle) * maxJoystickDistance;
+            }
+
+            // Update joystick visual position
+            joystickStick.style.transform = `translate(calc(-50% + ${normalizedDX}px), calc(-50% + ${normalizedDY}px))`;
+
+            // Update game state with normalized direction (-1 to 1)
+            gameState.touch.dx = normalizedDX / maxJoystickDistance;
+            gameState.touch.dy = normalizedDY / maxJoystickDistance;
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            gameState.touch.active = false;
+            gameState.touch.dx = 0;
+            gameState.touch.dy = 0;
+
+            // Reset joystick visual position
+            joystickStick.style.transform = 'translate(-50%, -50%)';
+        }
+
+        // Add touch event listeners
+        joystickBase.addEventListener('touchstart', handleTouchStart, { passive: false });
+        joystickBase.addEventListener('touchmove', handleTouchMove, { passive: false });
+        joystickBase.addEventListener('touchend', handleTouchEnd, { passive: false });
+        joystickBase.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+        // Detect if device supports touch and show appropriate controls
+        function detectTouchDevice() {
+            const isTouchDevice = ('ontouchstart' in window) ||
+                                  (navigator.maxTouchPoints > 0) ||
+                                  (navigator.msMaxTouchPoints > 0);
+
+            if (isTouchDevice || window.innerWidth <= 850) {
+                document.getElementById('touchControls').style.display = 'block';
+                document.querySelector('.instructions.desktop').style.display = 'none';
+                document.querySelector('.instructions.mobile').style.display = 'block';
+            }
+        }
+
+        // Call on load and resize
+        detectTouchDevice();
+        window.addEventListener('resize', detectTouchDevice);
 
         // Utility Functions
         function createVoxelTexture(ctx, x, y, size, baseColor) {
@@ -394,13 +576,20 @@
             let dx = 0;
             let dy = 0;
 
+            // Keyboard input
             if (gameState.keys['w'] || gameState.keys['arrowup']) dy -= 1;
             if (gameState.keys['s'] || gameState.keys['arrowdown']) dy += 1;
             if (gameState.keys['a'] || gameState.keys['arrowleft']) dx -= 1;
             if (gameState.keys['d'] || gameState.keys['arrowright']) dx += 1;
 
-            // Normalize diagonal movement
-            if (dx !== 0 && dy !== 0) {
+            // Touch input (overrides keyboard if active)
+            if (gameState.touch.active) {
+                dx = gameState.touch.dx;
+                dy = gameState.touch.dy;
+            }
+
+            // Normalize diagonal movement (only if using keyboard)
+            if (!gameState.touch.active && dx !== 0 && dy !== 0) {
                 dx *= 0.707;
                 dy *= 0.707;
             }
