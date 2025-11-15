@@ -201,7 +201,11 @@
             },
             difficulty: {
                 intervalReduction: 0.1,
-                timePerReduction: 30
+                timePerReduction: 30,
+                // Aggressive scaling factors
+                speedMultiplierPerMinute: 0.5,    // +50% speed per minute
+                damageMultiplierPerMinute: 0.4,   // +40% damage per minute
+                hpMultiplierPerMinute: 0.3        // +30% HP per minute
             }
         };
 
@@ -243,6 +247,13 @@
         let lastEnemySpawn = 0;
         let lastProjectileSpawn = 0;
         let currentSpawnInterval = CONFIG.enemy.initialSpawnInterval;
+
+        // Difficulty multipliers (updated dynamically)
+        let difficultyMultipliers = {
+            speed: 1.0,
+            damage: 1.0,
+            hp: 1.0
+        };
 
         // Input Handling
         document.addEventListener('keydown', (e) => {
@@ -423,10 +434,14 @@
             const angle = Math.random() * Math.PI * 2;
             const distance = 400;
 
+            // Apply HP multiplier based on difficulty
+            const baseHP = 1;
+            const scaledHP = Math.ceil(baseHP * difficultyMultipliers.hp);
+
             const enemy = {
                 x: player.worldX + Math.cos(angle) * distance,
                 y: player.worldY + Math.sin(angle) * distance,
-                hp: 1
+                hp: scaledHP
             };
 
             enemies.push(enemy);
@@ -436,14 +451,15 @@
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
 
-                // Move toward player
+                // Move toward player with difficulty-scaled speed
                 const dx = player.worldX - enemy.x;
                 const dy = player.worldY - enemy.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance > 0) {
-                    enemy.x += (dx / distance) * CONFIG.enemy.speed * deltaTime;
-                    enemy.y += (dy / distance) * CONFIG.enemy.speed * deltaTime;
+                    const scaledSpeed = CONFIG.enemy.speed * difficultyMultipliers.speed;
+                    enemy.x += (dx / distance) * scaledSpeed * deltaTime;
+                    enemy.y += (dy / distance) * scaledSpeed * deltaTime;
                 }
 
                 // Check collision with player
@@ -451,10 +467,11 @@
                     enemy.x, enemy.y, CONFIG.enemy.size,
                     player.worldX, player.worldY, CONFIG.player.size
                 )) {
-                    // Damage player
+                    // Damage player with difficulty-scaled damage
                     const now = Date.now();
                     if (now - player.lastDamageTime > CONFIG.enemy.damageInterval) {
-                        player.hp -= CONFIG.enemy.damage;
+                        const scaledDamage = Math.ceil(CONFIG.enemy.damage * difficultyMultipliers.damage);
+                        player.hp -= scaledDamage;
                         player.lastDamageTime = now;
                         updateUI();
 
@@ -525,11 +542,18 @@
                         proj.x, proj.y, CONFIG.projectile.size,
                         enemy.x, enemy.y, CONFIG.enemy.size
                     )) {
-                        // Remove both projectile and enemy
+                        // Damage enemy
+                        enemy.hp -= 1;
+
+                        // Remove projectile
                         projectiles.splice(i, 1);
-                        enemies.splice(j, 1);
-                        gameState.kills++;
-                        updateUI();
+
+                        // Remove enemy if dead
+                        if (enemy.hp <= 0) {
+                            enemies.splice(j, 1);
+                            gameState.kills++;
+                            updateUI();
+                        }
                         break;
                     }
                 }
@@ -545,11 +569,28 @@
 
         function updateDifficulty() {
             const timeInSeconds = (gameState.currentTime - gameState.startTime) / 1000;
+            const timeInMinutes = timeInSeconds / 60;
             const difficultyLevel = Math.floor(timeInSeconds / CONFIG.difficulty.timePerReduction);
 
+            // Calculate multipliers based on time (exponential growth at 5 min mark)
+            difficultyMultipliers.speed = 1.0 + (timeInMinutes * CONFIG.difficulty.speedMultiplierPerMinute);
+            difficultyMultipliers.damage = 1.0 + (timeInMinutes * CONFIG.difficulty.damageMultiplierPerMinute);
+            difficultyMultipliers.hp = 1.0 + (timeInMinutes * CONFIG.difficulty.hpMultiplierPerMinute);
+
+            // Extremely aggressive spawn rate scaling (quadratic after 3 minutes)
+            // At 5 min: ~150ms spawn interval (6-7 enemies/sec)
+            let spawnReduction;
+            if (timeInMinutes <= 3) {
+                spawnReduction = difficultyLevel * 50; // Linear for first 3 min
+            } else {
+                // Quadratic scaling after 3 min
+                const excessTime = timeInMinutes - 3;
+                spawnReduction = (6 * 50) + (excessTime * excessTime * 200);
+            }
+
             currentSpawnInterval = Math.max(
-                300,
-                CONFIG.enemy.initialSpawnInterval - (difficultyLevel * CONFIG.difficulty.intervalReduction * 1000)
+                100,  // Extreme minimum: 10 enemies/sec
+                CONFIG.enemy.initialSpawnInterval - spawnReduction
             );
         }
 
