@@ -311,8 +311,8 @@
         }
 
         function drawPlayer() {
-            const screenX = player.x - gameState.camera.x;
-            const screenY = player.y - gameState.camera.y;
+            const screenX = player.worldX - gameState.camera.x;
+            const screenY = player.worldY - gameState.camera.y;
 
             // Draw player as a voxel character head
             createVoxelTexture(ctx, screenX, screenY, CONFIG.player.size, CONFIG.player.color);
