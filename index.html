@@ -448,12 +448,12 @@
         window.addEventListener('resize', detectTouchDevice);
 
         // Utility Functions
-        function seededRandom(x, y) {
-            // Simple seeded random function based on position
-            const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-            return seed - Math.floor(seed);
+        // Seeded random number generator for deterministic textures
+        function seededRandom(seed) {
+            const x = Math.sin(seed) * 10000;
+            return x - Math.floor(x);
         }
-
+      
         function createVoxelTexture(ctx, screenX, screenY, worldX, worldY, size, baseColor) {
             // Create a simple voxel/block texture with shading
             const colors = {
@@ -467,13 +467,14 @@
             ctx.fillStyle = colors.base;
             ctx.fillRect(screenX, screenY, size, size);
 
-            // Add pixel detail pattern for texture (using world coords for consistency)
+            // Add pixel detail pattern for texture (using seeded random for consistent appearance)
             ctx.fillStyle = colors.light;
             for (let i = 0; i < size; i += 4) {
                 for (let j = 0; j < size; j += 4) {
-                    // Use world coordinates to seed random for consistent texture
-                    if (seededRandom(worldX + i, worldY + j) > 0.6) {
-                        ctx.fillRect(screenX + i, screenY + j, 2, 2);
+                    // Use position-based seed for deterministic texture
+                    const seed = (x + i) * 73856093 ^ (y + j) * 19349663;
+                    if (seededRandom(seed) > 0.6) {
+                        ctx.fillRect(x + i, y + j, 2, 2);
                     }
                 }
             }
