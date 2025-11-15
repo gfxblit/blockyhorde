@@ -448,7 +448,13 @@
         window.addEventListener('resize', detectTouchDevice);
 
         // Utility Functions
-        function createVoxelTexture(ctx, x, y, size, baseColor) {
+        function seededRandom(x, y) {
+            // Simple seeded random function based on position
+            const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return seed - Math.floor(seed);
+        }
+
+        function createVoxelTexture(ctx, screenX, screenY, worldX, worldY, size, baseColor) {
             // Create a simple voxel/block texture with shading
             const colors = {
                 base: baseColor,
@@ -459,35 +465,36 @@
 
             // Main face
             ctx.fillStyle = colors.base;
-            ctx.fillRect(x, y, size, size);
+            ctx.fillRect(screenX, screenY, size, size);
 
-            // Add pixel detail pattern for texture
+            // Add pixel detail pattern for texture (using world coords for consistency)
             ctx.fillStyle = colors.light;
             for (let i = 0; i < size; i += 4) {
                 for (let j = 0; j < size; j += 4) {
-                    if (Math.random() > 0.6) {
-                        ctx.fillRect(x + i, y + j, 2, 2);
+                    // Use world coordinates to seed random for consistent texture
+                    if (seededRandom(worldX + i, worldY + j) > 0.6) {
+                        ctx.fillRect(screenX + i, screenY + j, 2, 2);
                     }
                 }
             }
 
             // Top highlight
             ctx.fillStyle = colors.light;
-            ctx.fillRect(x, y, size, 3);
+            ctx.fillRect(screenX, screenY, size, 3);
 
             // Left highlight
-            ctx.fillRect(x, y, 3, size);
+            ctx.fillRect(screenX, screenY, 3, size);
 
             // Bottom shadow
             ctx.fillStyle = colors.dark;
-            ctx.fillRect(x, y + size - 3, size, 3);
+            ctx.fillRect(screenX, screenY + size - 3, size, 3);
 
             // Right shadow
-            ctx.fillRect(x + size - 3, y, 3, size);
+            ctx.fillRect(screenX + size - 3, screenY, 3, size);
 
             // Corner highlights
             ctx.fillStyle = colors.darkest;
-            ctx.fillRect(x + size - 3, y + size - 3, 3, 3);
+            ctx.fillRect(screenX + size - 3, screenY + size - 3, 3, 3);
         }
 
         function adjustBrightness(color, amount) {
@@ -505,11 +512,12 @@
         }
 
         function drawPlayer() {
-            const screenX = player.worldX - gameState.camera.x;
-            const screenY = player.worldY - gameState.camera.y;
+            // Player is always centered on screen since camera follows them
+            const screenX = (CONFIG.canvas.width - CONFIG.player.size) / 2;
+            const screenY = (CONFIG.canvas.height - CONFIG.player.size) / 2;
 
             // Draw player as a voxel character head
-            createVoxelTexture(ctx, screenX, screenY, CONFIG.player.size, CONFIG.player.color);
+            createVoxelTexture(ctx, screenX, screenY, player.worldX, player.worldY, CONFIG.player.size, CONFIG.player.color);
 
             // Add simple face details
             ctx.fillStyle = '#000';
@@ -531,7 +539,7 @@
             }
 
             // Draw enemy as a zombie-like voxel
-            createVoxelTexture(ctx, screenX, screenY, CONFIG.enemy.size, '#90cc90');
+            createVoxelTexture(ctx, screenX, screenY, enemy.x, enemy.y, CONFIG.enemy.size, '#90cc90');
 
             // Add zombie face details
             ctx.fillStyle = '#000';
@@ -577,7 +585,7 @@
 
                         // Alternate grass colors for texture
                         const baseColor = ((x / tileSize + y / tileSize) % 2 === 0) ? '#7cbd6e' : '#6ead5f';
-                        createVoxelTexture(ctx, screenX, screenY, tileSize, baseColor);
+                        createVoxelTexture(ctx, screenX, screenY, x, y, tileSize, baseColor);
                     }
                 }
             }
