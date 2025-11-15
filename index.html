@@ -300,10 +300,11 @@
             difficulty: {
                 intervalReduction: 0.1,
                 timePerReduction: 30,
-                // Aggressive scaling factors
-                speedMultiplierPerMinute: 0.5,    // +50% speed per minute
-                damageMultiplierPerMinute: 0.4,   // +40% damage per minute
-                hpMultiplierPerMinute: 0.3        // +30% HP per minute
+                // Aggressive continuous scaling targeting ~2 min survival
+                speedMultiplierPerMinute: 1.0,    // +100% speed per minute
+                damageMultiplierPerMinute: 0.8,   // +80% damage per minute
+                hpMultiplierPerMinute: 0.6,       // +60% HP per minute
+                spawnQuadraticFactor: 350         // Quadratic spawn rate scaling
             }
         };
 
@@ -759,26 +760,20 @@
         function updateDifficulty() {
             const timeInSeconds = (gameState.currentTime - gameState.startTime) / 1000;
             const timeInMinutes = timeInSeconds / 60;
-            const difficultyLevel = Math.floor(timeInSeconds / CONFIG.difficulty.timePerReduction);
 
-            // Calculate multipliers based on time (exponential growth at 5 min mark)
+            // Continuous scaling - all multipliers increase smoothly over time
+            // Targeting ~2 minute survival time with aggressive scaling
             difficultyMultipliers.speed = 1.0 + (timeInMinutes * CONFIG.difficulty.speedMultiplierPerMinute);
             difficultyMultipliers.damage = 1.0 + (timeInMinutes * CONFIG.difficulty.damageMultiplierPerMinute);
             difficultyMultipliers.hp = 1.0 + (timeInMinutes * CONFIG.difficulty.hpMultiplierPerMinute);
 
-            // Extremely aggressive spawn rate scaling (quadratic after 3 minutes)
-            // At 5 min: ~150ms spawn interval (6-7 enemies/sec)
-            let spawnReduction;
-            if (timeInMinutes <= 3) {
-                spawnReduction = difficultyLevel * 50; // Linear for first 3 min
-            } else {
-                // Quadratic scaling after 3 min
-                const excessTime = timeInMinutes - 3;
-                spawnReduction = (6 * 50) + (excessTime * excessTime * 200);
-            }
+            // Continuous quadratic spawn rate scaling from the start
+            // At 1 min: ~1150ms spawn interval (~0.87 enemies/sec)
+            // At 2 min: ~100ms spawn interval (10 enemies/sec)
+            const spawnReduction = timeInMinutes * timeInMinutes * CONFIG.difficulty.spawnQuadraticFactor;
 
             currentSpawnInterval = Math.max(
-                100,  // Extreme minimum: 10 enemies/sec
+                100,  // Minimum: 10 enemies/sec
                 CONFIG.enemy.initialSpawnInterval - spawnReduction
             );
         }
