@@ -67,7 +67,7 @@ export const CONFIG = {
     },
     projectile: {
         size: 8,
-        speed: 300,
+        speed: 450,
         interval: 500,
         color: '#ffff00'
     },
