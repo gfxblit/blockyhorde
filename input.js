@@ -37,11 +37,13 @@ export class InputManager {
      */
     setupKeyboardInput() {
         document.addEventListener('keydown', (e) => {
-            this.keys[e.key.toLowerCase()] = true;
+            // Use e.code for physical key position (works across keyboard layouts)
+            this.keys[e.code] = true;
         });
 
         document.addEventListener('keyup', (e) => {
-            this.keys[e.key.toLowerCase()] = false;
+            // Use e.code for physical key position (works across keyboard layouts)
+            this.keys[e.code] = false;
         });
     }
 
@@ -144,11 +146,11 @@ export class InputManager {
         let dx = 0;
         let dy = 0;
 
-        // Keyboard input
-        if (this.keys['w'] || this.keys['arrowup']) dy -= 1;
-        if (this.keys['s'] || this.keys['arrowdown']) dy += 1;
-        if (this.keys['a'] || this.keys['arrowleft']) dx -= 1;
-        if (this.keys['d'] || this.keys['arrowright']) dx += 1;
+        // Keyboard input (using physical key codes for layout independence)
+        if (this.keys['KeyW'] || this.keys['ArrowUp']) dy -= 1;
+        if (this.keys['KeyS'] || this.keys['ArrowDown']) dy += 1;
+        if (this.keys['KeyA'] || this.keys['ArrowLeft']) dx -= 1;
+        if (this.keys['KeyD'] || this.keys['ArrowRight']) dx += 1;
 
         // Touch input (overrides keyboard if active)
         if (this.touch.active) {
