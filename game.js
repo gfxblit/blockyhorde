@@ -563,7 +563,7 @@ export class Game {
         buff.expirationTime = timestamp + itemConfig.duration;
 
         // Show UI notification
-        this.ui.showItemPickup(item.type, buff.stacks);
+        this.uiManager.showItemPickup(item.type, buff.stacks);
     }
 
     /**
