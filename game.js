@@ -53,6 +53,19 @@ export class Game {
             damage: 1.0,
             hp: 1.0
         };
+
+        // Active abilities
+        this.abilities = {
+            ghastFireball: {
+                level: 1,
+                maxCharges: CONFIG.ghastFireball.maxCharges,
+                currentCharges: CONFIG.ghastFireball.maxCharges,
+                lastUsedTime: 0,
+                cooldownDuration: CONFIG.ghastFireball.cooldown,
+                size: CONFIG.ghastFireball.size,
+                splashRadius: CONFIG.ghastFireball.splashRadius
+            }
+        };
     }
 
     /**
@@ -85,6 +98,12 @@ export class Game {
         this.updateEnemies(deltaTime);
         this.updateProjectiles(deltaTime);
         this.updateDifficulty();
+        this.updateAbilities(timestamp);
+
+        // Check for ability input
+        if (this.inputManager.isAbilityPressed()) {
+            this.useGhastFireball();
+        }
 
         // Spawn entities
         if (timestamp - this.lastEnemySpawn > this.currentSpawnInterval) {
@@ -101,7 +120,7 @@ export class Game {
         this.render();
 
         // Update UI
-        this.uiManager.updateAll(this.state, this.player);
+        this.uiManager.updateAll(this.state, this.player, this.abilities);
 
         // Continue loop
         requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
@@ -217,10 +236,13 @@ export class Game {
         }
 
         const projectile = {
+            type: 'regular',
             x: this.player.worldX + CONFIG.player.size / 2,
             y: this.player.worldY + CONFIG.player.size / 2,
             vx: Math.cos(angle) * CONFIG.projectile.speed,
-            vy: Math.sin(angle) * CONFIG.projectile.speed
+            vy: Math.sin(angle) * CONFIG.projectile.speed,
+            damage: 1,
+            size: CONFIG.projectile.size
         };
 
         this.projectiles.push(projectile);
@@ -250,21 +272,62 @@ export class Game {
             for (let j = this.enemies.length - 1; j >= 0; j--) {
                 const enemy = this.enemies[j];
                 if (this.checkCollision(
-                    proj.x, proj.y, CONFIG.projectile.size,
+                    proj.x, proj.y, proj.size,
                     enemy.x, enemy.y, CONFIG.enemy.size
                 )) {
-                    // Damage enemy
-                    enemy.hp -= 1;
+                    // Handle Ghast Fireball differently
+                    if (proj.type === 'ghastFireball') {
+                        // Apply splash damage to all enemies in radius
+                        this.applyGhastFireballExplosion(proj.x, proj.y, proj.damage, proj.splashRadius);
 
-                    // Remove projectile
-                    this.projectiles.splice(i, 1);
+                        // Remove projectile
+                        this.projectiles.splice(i, 1);
+                        break;
+                    } else {
+                        // Regular projectile behavior
+                        enemy.hp -= proj.damage;
 
-                    // Remove enemy if dead
-                    if (enemy.hp <= 0) {
-                        this.enemies.splice(j, 1);
-                        this.state.kills++;
+                        // Remove projectile
+                        this.projectiles.splice(i, 1);
+
+                        // Remove enemy if dead
+                        if (enemy.hp <= 0) {
+                            this.enemies.splice(j, 1);
+                            this.state.kills++;
+                        }
+                        break;
                     }
-                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Apply Ghast Fireball explosion damage
+     */
+    applyGhastFireballExplosion(explosionX, explosionY, baseDamage, radius) {
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const dx = enemy.x + CONFIG.enemy.size / 2 - explosionX;
+            const dy = enemy.y + CONFIG.enemy.size / 2 - explosionY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Check if enemy is in explosion radius
+            if (distance <= radius) {
+                // Direct hit gets full damage, splash gets 50%
+                const isDirectHit = this.checkCollision(
+                    explosionX, explosionY, CONFIG.ghastFireball.size,
+                    enemy.x, enemy.y, CONFIG.enemy.size
+                );
+
+                const damage = isDirectHit ? baseDamage : baseDamage * CONFIG.ghastFireball.splashDamageMultiplier;
+
+                enemy.hp -= damage;
+
+                // Remove enemy if dead
+                if (enemy.hp <= 0) {
+                    this.enemies.splice(i, 1);
+                    this.state.kills++;
                 }
             }
         }
@@ -278,6 +341,96 @@ export class Game {
                x1 + size1 > x2 &&
                y1 < y2 + size2 &&
                y1 + size1 > y2;
+    }
+
+    /**
+     * Update ability cooldowns and recharge
+     */
+    updateAbilities(timestamp) {
+        const ability = this.abilities.ghastFireball;
+
+        // If not at max charges, recharge over time
+        if (ability.currentCharges < ability.maxCharges) {
+            const timeSinceLastUse = timestamp - ability.lastUsedTime;
+            if (timeSinceLastUse >= ability.cooldownDuration) {
+                ability.currentCharges = Math.min(ability.maxCharges, ability.currentCharges + 1);
+                ability.lastUsedTime = timestamp;
+            }
+        }
+    }
+
+    /**
+     * Try to use the Ghast Fireball ability
+     */
+    useGhastFireball() {
+        const ability = this.abilities.ghastFireball;
+
+        // Check if ability is available
+        if (ability.currentCharges <= 0) {
+            return false;
+        }
+
+        // Consume a charge
+        ability.currentCharges--;
+        ability.lastUsedTime = this.state.currentTime;
+
+        // Spawn the ghast fireball
+        this.spawnGhastFireball();
+
+        return true;
+    }
+
+    /**
+     * Spawn a Ghast Fireball projectile
+     */
+    spawnGhastFireball() {
+        const movement = this.inputManager.getMovementDirection();
+        let angle;
+
+        // Priority 1: Player is moving - shoot in movement direction
+        if (movement.dx !== 0 || movement.dy !== 0) {
+            angle = Math.atan2(movement.dy, movement.dx);
+        }
+        // Priority 2: Mouse position (would need to be implemented)
+        // Priority 3: Nearest elite enemy (fallback to nearest enemy for now)
+        else {
+            let nearestEnemy = null;
+            let minDistance = Infinity;
+
+            for (const enemy of this.enemies) {
+                const dx = enemy.x - this.player.worldX;
+                const dy = enemy.y - this.player.worldY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestEnemy = enemy;
+                }
+            }
+
+            if (nearestEnemy) {
+                const dx = nearestEnemy.x - this.player.worldX;
+                const dy = nearestEnemy.y - this.player.worldY;
+                angle = Math.atan2(dy, dx);
+            } else {
+                // No enemies, shoot right
+                angle = 0;
+            }
+        }
+
+        const ability = this.abilities.ghastFireball;
+        const projectile = {
+            type: 'ghastFireball',
+            x: this.player.worldX + CONFIG.player.size / 2,
+            y: this.player.worldY + CONFIG.player.size / 2,
+            vx: Math.cos(angle) * CONFIG.ghastFireball.speed,
+            vy: Math.sin(angle) * CONFIG.ghastFireball.speed,
+            damage: CONFIG.ghastFireball.baseDamage,
+            size: ability.size,
+            splashRadius: ability.splashRadius
+        };
+
+        this.projectiles.push(projectile);
     }
 
     /**

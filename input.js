@@ -21,6 +21,12 @@ export class InputManager {
 
         this.joystickBase = null;
         this.joystickStick = null;
+        this.abilityButton = null;
+
+        // Ability input tracking (edge detection)
+        this.abilityKeyPressed = false;
+        this.abilityKeyWasPressed = false;
+        this.abilityTouchPressed = false;
     }
 
     /**
@@ -29,6 +35,7 @@ export class InputManager {
     initialize() {
         this.setupKeyboardInput();
         this.setupTouchInput();
+        this.setupAbilityButton();
         this.detectTouchDevice();
     }
 
@@ -63,6 +70,28 @@ export class InputManager {
         this.joystickBase.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
         this.joystickBase.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
         this.joystickBase.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
+    }
+
+    /**
+     * Setup ability button for touch
+     */
+    setupAbilityButton() {
+        this.abilityButton = document.getElementById('abilityButton');
+
+        if (!this.abilityButton) {
+            console.warn('Ability button not found');
+            return;
+        }
+
+        this.abilityButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.abilityTouchPressed = true;
+        }, { passive: false });
+
+        this.abilityButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.abilityTouchPressed = false;
+        }, { passive: false });
     }
 
     /**
@@ -163,5 +192,27 @@ export class InputManager {
         }
 
         return { dx, dy };
+    }
+
+    /**
+     * Check if ability key was just pressed (edge detection)
+     * @returns {boolean} True if ability was just pressed
+     */
+    isAbilityPressed() {
+        // Check if Space key or touch button is pressed
+        this.abilityKeyPressed = this.keys['Space'] || this.abilityTouchPressed || false;
+
+        // Edge detection: only trigger on key down, not while held
+        const justPressed = this.abilityKeyPressed && !this.abilityKeyWasPressed;
+
+        // Update previous state
+        this.abilityKeyWasPressed = this.abilityKeyPressed;
+
+        // Reset touch pressed state after detection
+        if (this.abilityTouchPressed) {
+            this.abilityTouchPressed = false;
+        }
+
+        return justPressed;
     }
 }
