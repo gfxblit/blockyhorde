@@ -20,10 +20,12 @@ export class UIManager {
             playAgainButton: null,
             abilityCooldown: document.getElementById('abilityCooldown'),
             abilityCharges: document.getElementById('abilityCharges'),
-            difficultyNotification: document.getElementById('difficultyNotification')
+            difficultyNotification: document.getElementById('difficultyNotification'),
+            itemPickupNotification: document.getElementById('itemPickupNotification')
         };
 
         this.notificationTimeout = null;
+        this.itemPickupTimeout = null;
         this.initializeEventListeners();
     }
 
@@ -202,5 +204,46 @@ export class UIManager {
         this.notificationTimeout = setTimeout(() => {
             this.elements.difficultyNotification.classList.remove('show');
         }, 3000);
+    }
+
+    /**
+     * Show item pickup notification
+     * @param {string} itemType - Type of item picked up ('attackSpeed' or 'damage')
+     * @param {number} stacks - Current number of stacks
+     */
+    showItemPickup(itemType, stacks) {
+        // Clear any existing timeout
+        if (this.itemPickupTimeout) {
+            clearTimeout(this.itemPickupTimeout);
+        }
+
+        // Get item configuration
+        const itemConfig = CONFIG.items.types[itemType];
+        if (!itemConfig) return;
+
+        // Create notification content based on item type
+        let notificationHTML = '';
+        let cssClass = '';
+
+        if (itemType === 'attackSpeed') {
+            notificationHTML = `<span class="item-icon">⚡</span> Attack Speed +${stacks}`;
+            cssClass = 'attack-speed';
+        } else if (itemType === 'damage') {
+            notificationHTML = `<span class="item-icon">💥</span> Damage +${stacks}`;
+            cssClass = 'damage';
+        }
+
+        // Remove previous classes
+        this.elements.itemPickupNotification.classList.remove('attack-speed', 'damage');
+
+        // Set content and class
+        this.elements.itemPickupNotification.innerHTML = notificationHTML;
+        this.elements.itemPickupNotification.classList.add(cssClass);
+        this.elements.itemPickupNotification.classList.add('show');
+
+        // Auto-hide after 1.5 seconds
+        this.itemPickupTimeout = setTimeout(() => {
+            this.elements.itemPickupNotification.classList.remove('show');
+        }, 1500);
     }
 }

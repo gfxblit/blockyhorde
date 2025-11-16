@@ -266,6 +266,47 @@ body {
     opacity: 0.9;
 }
 
+.item-pickup-notification {
+    position: absolute;
+    top: 140px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #fff;
+    border-radius: 6px;
+    padding: 8px 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.item-pickup-notification.show {
+    opacity: 1;
+}
+
+.item-pickup-notification.attack-speed {
+    border-color: #00ffff;
+    box-shadow: 0 3px 8px rgba(0, 255, 255, 0.4), 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.item-pickup-notification.damage {
+    border-color: #ff4444;
+    box-shadow: 0 3px 8px rgba(255, 68, 68, 0.4), 0 0 10px rgba(255, 68, 68, 0.3);
+}
+
+.item-pickup-notification .item-icon {
+    display: inline-block;
+    font-size: 20px;
+    margin-right: 6px;
+}
+
 @media (max-width: 850px) {
     #gameContainer {
         width: 100vw;
@@ -310,6 +351,11 @@ body {
     .notification .difficulty-stats {
         font-size: 12px;
     }
+
+    .item-pickup-notification {
+        font-size: 14px;
+        padding: 6px 18px;
+    }
 }
 
 @media (max-width: 500px) {
@@ -340,5 +386,11 @@ body {
 
     .notification .difficulty-stats {
         font-size: 11px;
+    }
+
+    .item-pickup-notification {
+        font-size: 12px;
+        padding: 5px 15px;
+        max-width: 90%;
     }
 }
