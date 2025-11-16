@@ -12,7 +12,21 @@
     <script>
         // Initialize Eruda for mobile debugging
         // It provides a console panel that can be accessed by clicking the floating button
-        eruda.init();
+        // Position the button in the top-right corner, away from game UI
+        eruda.init({
+            container: document.body,
+            tool: ['console', 'elements', 'network', 'resources', 'info', 'snippets', 'sources'],
+            useShadowDom: true,
+            autoScale: true,
+            defaults: {
+                displaySize: 50,
+                transparency: 0.9,
+                theme: 'Dark'
+            }
+        });
+
+        // Move the entry button to top-right after initialization
+        eruda.position({ x: window.innerWidth - 60, y: 10 });
     </script>
 </head>
 <body>
