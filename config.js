@@ -79,6 +79,14 @@ export const CONFIG = {
                 duration: 15000,          // 15 seconds
                 stackable: true,
                 maxStacks: 5
+            },
+            speed: {
+                name: 'Speed Boost',
+                color: '#00ff00',         // Green
+                speedBonus: 50,           // +50 speed per pickup
+                duration: 15000,          // 15 seconds
+                stackable: true,
+                maxStacks: 5
             }
         }
     }
