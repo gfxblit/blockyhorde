@@ -44,6 +44,10 @@ export class Game {
                 damage: {
                     stacks: 0,
                     expirationTime: 0
+                },
+                speed: {
+                    stacks: 0,
+                    expirationTime: 0
                 }
             }
         };
@@ -151,9 +155,13 @@ export class Game {
     updatePlayer(deltaTime) {
         const movement = this.inputManager.getMovementDirection();
 
+        // Calculate modified speed based on speed buffs
+        const speedBonus = this.player.buffs.speed.stacks * CONFIG.items.types.speed.speedBonus;
+        const totalSpeed = CONFIG.player.speed + speedBonus;
+
         // Update position
-        this.player.worldX += movement.dx * CONFIG.player.speed * deltaTime;
-        this.player.worldY += movement.dy * CONFIG.player.speed * deltaTime;
+        this.player.worldX += movement.dx * totalSpeed * deltaTime;
+        this.player.worldY += movement.dy * totalSpeed * deltaTime;
 
         // Update camera to follow player
         this.state.camera.x = this.player.worldX - CONFIG.canvas.width / 2 + CONFIG.player.size / 2;
@@ -498,8 +506,8 @@ export class Game {
             return;
         }
 
-        // Randomly choose item type (50/50 split between attack speed and damage)
-        const itemTypes = ['attackSpeed', 'damage'];
+        // Randomly choose item type (equal chance between attack speed, damage, and speed)
+        const itemTypes = ['attackSpeed', 'damage', 'speed'];
         const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
 
         const item = {
