@@ -87,6 +87,7 @@ body {
     text-align: center;
     display: none;
     z-index: 20;
+    pointer-events: all;
 }
 
 #gameOver h1 {
