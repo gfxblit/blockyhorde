@@ -481,6 +481,9 @@ export class Game {
             elapsed: 0
         });
 
+        // Play explosion sound immediately on impact
+        audioManager.playExplosion();
+
         let enemiesHit = 0;
         let bossKilled = false;
 
@@ -515,7 +518,7 @@ export class Game {
             }
         }
 
-        // Play appropriate sound effects
+        // Play additional sound effects for enemy deaths
         if (enemiesHit > 0) {
             if (bossKilled) {
                 audioManager.playBossDeath();
