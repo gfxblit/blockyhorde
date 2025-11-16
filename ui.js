@@ -121,10 +121,9 @@ export class UIManager {
         if (currentCharges < maxCharges) {
             const timeSinceLastUse = currentTime - lastUsedTime;
             const cooldownProgress = Math.min(1, timeSinceLastUse / cooldownDuration);
-            const overlayScale = 1 - cooldownProgress;
-            this.elements.abilityCooldown.style.transform = `scaleY(${overlayScale})`;
+            this.elements.abilityCooldown.style.setProperty('--cooldown-progress', cooldownProgress);
         } else {
-            this.elements.abilityCooldown.style.transform = 'scaleY(0)';
+            this.elements.abilityCooldown.style.setProperty('--cooldown-progress', 1);
         }
     }
 
