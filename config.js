@@ -115,7 +115,7 @@ export const CONFIG = {
                 name: 'Speed Boost',
                 color: '#00ff00',         // Green
                 speedBonus: 50,           // +50 speed per pickup
-                duration: 15000,          // 15 seconds
+                duration: Infinity,       // Permanent (never expires)
                 stackable: true,
                 maxStacks: 5
             }
