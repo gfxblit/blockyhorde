@@ -3,7 +3,7 @@
  * Core game logic and state management
  */
 import { CONFIG } from './config.js';
-import { drawPlayer, drawEnemy, drawProjectile, drawBackground } from './renderer.js';
+import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion } from './renderer.js';
 
 /**
  * Main Game class
@@ -41,6 +41,7 @@ export class Game {
         // Game entities
         this.enemies = [];
         this.projectiles = [];
+        this.explosions = []; // Visual explosion effects
 
         // Spawn timing
         this.lastEnemySpawn = 0;
@@ -98,6 +99,7 @@ export class Game {
         this.updatePlayer(deltaTime);
         this.updateEnemies(deltaTime);
         this.updateProjectiles(deltaTime);
+        this.updateExplosions(deltaTime);
         this.updateDifficulty();
         this.updateAbilities(timestamp);
 
@@ -305,9 +307,38 @@ export class Game {
     }
 
     /**
+     * Update explosion visual effects
+     */
+    updateExplosions(deltaTime) {
+        for (let i = this.explosions.length - 1; i >= 0; i--) {
+            const explosion = this.explosions[i];
+            explosion.elapsed += deltaTime;
+
+            // Expand the explosion radius over time
+            const progress = explosion.elapsed / explosion.duration;
+            explosion.radius = explosion.maxRadius * Math.min(progress, 1);
+
+            // Remove expired explosions
+            if (explosion.elapsed >= explosion.duration) {
+                this.explosions.splice(i, 1);
+            }
+        }
+    }
+
+    /**
      * Apply Ghast Fireball explosion damage
      */
     applyGhastFireballExplosion(explosionX, explosionY, baseDamage, radius) {
+        // Create visual explosion effect
+        this.explosions.push({
+            x: explosionX,
+            y: explosionY,
+            radius: 0,
+            maxRadius: radius,
+            duration: 0.5, // 500ms animation
+            elapsed: 0
+        });
+
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             const dx = enemy.x + CONFIG.enemy.size / 2 - explosionX;
@@ -473,6 +504,7 @@ export class Game {
 
         this.enemies.forEach(enemy => drawEnemy(this.ctx, enemy, this.state.camera));
         this.projectiles.forEach(proj => drawProjectile(this.ctx, proj, this.state.camera));
+        this.explosions.forEach(explosion => drawExplosion(this.ctx, explosion, this.state.camera));
 
         drawPlayer(this.ctx, this.player);
     }
