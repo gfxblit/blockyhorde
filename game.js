@@ -26,6 +26,10 @@ export class Game {
             camera: { x: 0, y: 0 }
         };
 
+        // Boss tracking
+        this.bossSpawned = false;
+        this.currentBossLevel = 0;
+
         // Player state
         this.player = {
             x: CONFIG.canvas.width / 2,
@@ -183,6 +187,7 @@ export class Game {
         const scaledHP = Math.ceil(baseHP * this.difficultyMultipliers.hp);
 
         const enemy = {
+            type: 'regular',
             x: this.player.worldX + Math.cos(angle) * distance,
             y: this.player.worldY + Math.sin(angle) * distance,
             hp: scaledHP,
@@ -193,11 +198,39 @@ export class Game {
     }
 
     /**
+     * Spawn a boss enemy
+     */
+    spawnBoss() {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 450; // Spawn slightly farther out
+
+        const baseHP = CONFIG.boss.health;
+        const scaledHP = Math.ceil(baseHP * this.difficultyMultipliers.hp);
+
+        const boss = {
+            type: 'boss',
+            x: this.player.worldX + Math.cos(angle) * distance,
+            y: this.player.worldY + Math.sin(angle) * distance,
+            hp: scaledHP,
+            maxHP: scaledHP,
+            lastProjectileTime: 0
+        };
+
+        this.enemies.push(boss);
+        this.bossSpawned = true;
+    }
+
+    /**
      * Update all enemies
      */
     updateEnemies(deltaTime) {
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
+
+            // Determine enemy properties based on type
+            const isBoss = enemy.type === 'boss';
+            const enemySpeed = isBoss ? CONFIG.boss.speed : CONFIG.enemy.speed;
+            const enemySize = isBoss ? CONFIG.boss.size : CONFIG.enemy.size;
 
             // Move toward player
             const dx = this.player.worldX - enemy.x;
@@ -205,28 +238,61 @@ export class Game {
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             if (distance > 0) {
-                const scaledSpeed = CONFIG.enemy.speed * this.difficultyMultipliers.speed;
+                const scaledSpeed = enemySpeed * this.difficultyMultipliers.speed;
                 enemy.x += (dx / distance) * scaledSpeed * deltaTime;
                 enemy.y += (dy / distance) * scaledSpeed * deltaTime;
             }
 
+            // Boss projectile firing
+            if (isBoss) {
+                const now = this.state.currentTime;
+                if (now - enemy.lastProjectileTime > CONFIG.boss.projectileInterval) {
+                    this.spawnBossProjectile(enemy);
+                    enemy.lastProjectileTime = now;
+                }
+            }
+
             // Check collision with player
             if (this.checkCollision(
-                enemy.x, enemy.y, CONFIG.enemy.size,
+                enemy.x, enemy.y, enemySize,
                 this.player.worldX, this.player.worldY, CONFIG.player.size
             )) {
-                this.damagePlayer();
+                this.damagePlayer(isBoss);
             }
         }
     }
 
     /**
+     * Spawn a projectile from a boss toward the player
+     */
+    spawnBossProjectile(boss) {
+        const dx = this.player.worldX - boss.x;
+        const dy = this.player.worldY - boss.y;
+        const angle = Math.atan2(dy, dx);
+
+        const projectile = {
+            type: 'bossProjectile',
+            x: boss.x + CONFIG.boss.size / 2,
+            y: boss.y + CONFIG.boss.size / 2,
+            vx: Math.cos(angle) * CONFIG.boss.projectileSpeed,
+            vy: Math.sin(angle) * CONFIG.boss.projectileSpeed,
+            damage: CONFIG.boss.projectileDamage,
+            size: CONFIG.boss.projectileSize
+        };
+
+        this.projectiles.push(projectile);
+    }
+
+    /**
      * Damage the player
      */
-    damagePlayer() {
+    damagePlayer(isBoss = false) {
         const now = Date.now();
-        if (now - this.player.lastDamageTime > CONFIG.enemy.damageInterval) {
-            const scaledDamage = Math.ceil(CONFIG.enemy.damage * this.difficultyMultipliers.damage);
+        const damageInterval = isBoss ? CONFIG.boss.damageInterval : CONFIG.enemy.damageInterval;
+
+        if (now - this.player.lastDamageTime > damageInterval) {
+            const baseDamage = isBoss ? CONFIG.boss.damage : CONFIG.enemy.damage;
+            const scaledDamage = Math.ceil(baseDamage * this.difficultyMultipliers.damage);
             this.player.hp -= scaledDamage;
             this.player.lastDamageTime = now;
 
@@ -301,35 +367,58 @@ export class Game {
                 continue;
             }
 
-            // Check collision with enemies
-            for (let j = this.enemies.length - 1; j >= 0; j--) {
-                const enemy = this.enemies[j];
+            // Handle boss projectiles hitting the player
+            if (proj.type === 'bossProjectile') {
                 if (this.checkCollision(
                     proj.x, proj.y, proj.size,
-                    enemy.x, enemy.y, CONFIG.enemy.size
+                    this.player.worldX, this.player.worldY, CONFIG.player.size
                 )) {
-                    // Handle Ghast Fireball differently
-                    if (proj.type === 'ghastFireball') {
-                        // Apply splash damage to all enemies in radius
-                        this.applyGhastFireballExplosion(proj.x, proj.y, proj.damage, proj.splashRadius);
+                    this.player.hp -= proj.damage;
+                    this.projectiles.splice(i, 1);
 
-                        // Remove projectile
-                        this.projectiles.splice(i, 1);
-                        break;
-                    } else {
-                        // Regular projectile behavior
-                        enemy.hp -= proj.damage;
+                    if (this.player.hp <= 0) {
+                        this.gameOver();
+                    }
+                    continue;
+                }
+            } else {
+                // Check collision with enemies (for player projectiles)
+                for (let j = this.enemies.length - 1; j >= 0; j--) {
+                    const enemy = this.enemies[j];
+                    const enemySize = enemy.type === 'boss' ? CONFIG.boss.size : CONFIG.enemy.size;
 
-                        // Remove projectile
-                        this.projectiles.splice(i, 1);
+                    if (this.checkCollision(
+                        proj.x, proj.y, proj.size,
+                        enemy.x, enemy.y, enemySize
+                    )) {
+                        // Handle Ghast Fireball differently
+                        if (proj.type === 'ghastFireball') {
+                            // Apply splash damage to all enemies in radius
+                            this.applyGhastFireballExplosion(proj.x, proj.y, proj.damage, proj.splashRadius);
 
-                        // Remove enemy if dead
-                        if (enemy.hp <= 0) {
-                            this.dropItem(enemy.x, enemy.y);
-                            this.enemies.splice(j, 1);
-                            this.state.kills++;
+                            // Remove projectile
+                            this.projectiles.splice(i, 1);
+                            break;
+                        } else {
+                            // Regular projectile behavior
+                            enemy.hp -= proj.damage;
+
+                            // Remove projectile
+                            this.projectiles.splice(i, 1);
+
+                            // Remove enemy if dead
+                            if (enemy.hp <= 0) {
+                                this.dropItem(enemy.x, enemy.y);
+                                this.enemies.splice(j, 1);
+                                this.state.kills++;
+
+                                // Reset boss spawned flag when boss is killed
+                                if (enemy.type === 'boss') {
+                                    this.bossSpawned = false;
+                                }
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
@@ -599,6 +688,12 @@ export class Game {
         if (currentDifficultyLevel > this.lastDifficultyLevel && currentDifficultyLevel > 0) {
             this.lastDifficultyLevel = currentDifficultyLevel;
             this.uiManager.showDifficultyNotification(currentDifficultyLevel, this.difficultyMultipliers);
+
+            // Spawn boss every 2 levels
+            if (currentDifficultyLevel % 2 === 0 && !this.bossSpawned) {
+                this.spawnBoss();
+                this.currentBossLevel = currentDifficultyLevel;
+            }
         }
     }
 
