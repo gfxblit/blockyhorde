@@ -142,6 +142,21 @@ export function drawEnemy(ctx, enemy, camera) {
  * @param {Object} camera - Camera position
  */
 export function drawProjectile(ctx, projectile, camera) {
+    // Route to appropriate drawer based on type
+    if (projectile.type === 'ghastFireball') {
+        drawGhastFireball(ctx, projectile, camera);
+    } else {
+        drawRegularProjectile(ctx, projectile, camera);
+    }
+}
+
+/**
+ * Draws a regular projectile
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Object} projectile - Projectile object
+ * @param {Object} camera - Camera position
+ */
+function drawRegularProjectile(ctx, projectile, camera) {
     const screenX = projectile.x - camera.x;
     const screenY = projectile.y - camera.y;
 
@@ -157,6 +172,48 @@ export function drawProjectile(ctx, projectile, camera) {
     ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
     ctx.lineWidth = 2;
     ctx.strokeRect(screenX - 2, screenY - 2, CONFIG.projectile.size + 4, CONFIG.projectile.size + 4);
+}
+
+/**
+ * Draws a Ghast Fireball
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Object} projectile - Projectile object
+ * @param {Object} camera - Camera position
+ */
+function drawGhastFireball(ctx, projectile, camera) {
+    const screenX = projectile.x - camera.x;
+    const screenY = projectile.y - camera.y;
+    const size = projectile.size;
+
+    // Draw large white sphere with voxel style
+    createVoxelTexture(ctx, screenX, screenY, projectile.x, projectile.y, size, CONFIG.ghastFireball.color);
+
+    // Add fiery details (orange/red pixels)
+    ctx.fillStyle = '#ffa500';
+    for (let i = 0; i < size; i += 6) {
+        for (let j = 0; j < size; j += 6) {
+            const seed = (projectile.x + i) * 31 ^ (projectile.y + j) * 17;
+            if (seededRandom(seed) > 0.7) {
+                ctx.fillRect(screenX + i, screenY + j, 3, 3);
+            }
+        }
+    }
+
+    // Add bright white core
+    ctx.fillStyle = '#ffffff';
+    const coreSize = Math.floor(size / 3);
+    const coreOffset = Math.floor((size - coreSize) / 2);
+    ctx.fillRect(screenX + coreOffset, screenY + coreOffset, coreSize, coreSize);
+
+    // Outer glow effect (white/orange)
+    ctx.strokeStyle = 'rgba(255, 200, 100, 0.5)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(screenX - 3, screenY - 3, size + 6, size + 6);
+
+    // Larger glow
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(screenX - 6, screenY - 6, size + 12, size + 12);
 }
 
 /**

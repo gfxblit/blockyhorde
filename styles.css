@@ -162,6 +162,74 @@ body {
     transition: all 0.1s ease-out;
 }
 
+#abilityUI {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 15;
+    pointer-events: all;
+}
+
+.ability-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.ability-icon {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(145deg, #333, #222);
+    border: 3px solid #555;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.ability-icon:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.ability-key {
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 2;
+}
+
+.cooldown-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    background: rgba(0, 0, 0, 0.7);
+    transition: height 0.1s linear;
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.ability-charges {
+    display: flex;
+    gap: 4px;
+    font-size: 20px;
+    color: #4CAF50;
+    text-shadow: 0 0 6px rgba(76, 175, 80, 0.8);
+}
+
+.ability-charges.depleted {
+    color: #666;
+    text-shadow: none;
+}
+
 @media (max-width: 850px) {
     #gameContainer {
         width: 100vw;

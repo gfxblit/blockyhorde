@@ -35,11 +35,21 @@
         </div>
 
         <div class="instructions desktop">
-            WASD or Arrow Keys to Move | Auto-Attack Active | Survive!
+            WASD or Arrow Keys to Move | SPACE: Ghast Fireball | Survive!
         </div>
 
         <div class="instructions mobile" style="display: none;">
-            Use Joystick to Move | Auto-Attack Active | Survive!
+            Use Joystick to Move | TAP: Ghast Fireball | Survive!
+        </div>
+
+        <div id="abilityUI">
+            <div class="ability-indicator">
+                <div class="ability-icon" id="abilityButton">
+                    <div id="abilityCooldown" class="cooldown-overlay"></div>
+                    <span class="ability-key">SPACE</span>
+                </div>
+                <div class="ability-charges" id="abilityCharges">●</div>
+            </div>
         </div>
 
         <div id="touchControls">

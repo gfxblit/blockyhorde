@@ -17,7 +17,9 @@ export class UIManager {
             gameOver: document.getElementById('gameOver'),
             finalTime: document.getElementById('finalTime'),
             finalKills: document.getElementById('finalKills'),
-            playAgainButton: null
+            playAgainButton: null,
+            abilityCooldown: document.getElementById('abilityCooldown'),
+            abilityCharges: document.getElementById('abilityCharges')
         };
 
         this.initializeEventListeners();
@@ -90,14 +92,52 @@ export class UIManager {
     }
 
     /**
+     * Update ability cooldown display
+     * @param {Object} ability - Ability state object
+     * @param {number} currentTime - Current game timestamp
+     */
+    updateAbilityCooldown(ability, currentTime) {
+        const { currentCharges, maxCharges, lastUsedTime, cooldownDuration } = ability;
+
+        // Update charge indicator
+        let chargeText = '';
+        for (let i = 0; i < maxCharges; i++) {
+            chargeText += i < currentCharges ? '●' : '○';
+        }
+        this.elements.abilityCharges.textContent = chargeText;
+
+        // Toggle depleted class
+        if (currentCharges > 0) {
+            this.elements.abilityCharges.classList.remove('depleted');
+        } else {
+            this.elements.abilityCharges.classList.add('depleted');
+        }
+
+        // Update cooldown overlay
+        if (currentCharges < maxCharges) {
+            const timeSinceLastUse = currentTime - lastUsedTime;
+            const cooldownProgress = Math.min(1, timeSinceLastUse / cooldownDuration);
+            const overlayHeight = (1 - cooldownProgress) * 100;
+            this.elements.abilityCooldown.style.height = `${overlayHeight}%`;
+        } else {
+            this.elements.abilityCooldown.style.height = '0%';
+        }
+    }
+
+    /**
      * Update all UI elements
      * @param {Object} gameState - Current game state
      * @param {Object} player - Player object
+     * @param {Object} abilities - Abilities state object (optional)
      */
-    updateAll(gameState, player) {
+    updateAll(gameState, player, abilities = null) {
         this.updateHealth(player.hp);
         this.updateTime(gameState.startTime, gameState.currentTime);
         this.updateKills(gameState.kills);
+
+        if (abilities && abilities.ghastFireball) {
+            this.updateAbilityCooldown(abilities.ghastFireball, gameState.currentTime);
+        }
     }
 
     /**
