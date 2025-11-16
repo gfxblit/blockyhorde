@@ -6,6 +6,7 @@ import { CONFIG } from './config.js';
 import { InputManager } from './input.js';
 import { UIManager } from './ui.js';
 import { Game } from './game.js';
+import audioManager from './audio.js';
 
 /**
  * Update canvas dimensions based on current viewport
@@ -65,6 +66,20 @@ function initialize() {
     // Create and start game
     const game = new Game(canvas, inputManager, uiManager);
     game.start();
+
+    // Initialize audio on first user interaction
+    let audioInitialized = false;
+    const initAudio = () => {
+        if (!audioInitialized) {
+            audioManager.init();
+            audioInitialized = true;
+        }
+    };
+
+    // Listen for any user interaction to initialize audio
+    document.addEventListener('keydown', initAudio, { once: true });
+    document.addEventListener('touchstart', initAudio, { once: true });
+    document.addEventListener('click', initAudio, { once: true });
 
     // Handle window resize and orientation changes
     let resizeTimeout;

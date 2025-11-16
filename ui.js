@@ -3,6 +3,7 @@
  * Handles all user interface updates and DOM manipulation
  */
 import { CONFIG } from './config.js';
+import audioManager from './audio.js';
 
 /**
  * UI Manager
@@ -21,7 +22,8 @@ export class UIManager {
             abilityCooldown: document.getElementById('abilityCooldown'),
             abilityCharges: document.getElementById('abilityCharges'),
             difficultyNotification: document.getElementById('difficultyNotification'),
-            itemPickupNotification: document.getElementById('itemPickupNotification')
+            itemPickupNotification: document.getElementById('itemPickupNotification'),
+            audioToggle: document.getElementById('audioToggle')
         };
 
         this.notificationTimeout = null;
@@ -42,10 +44,40 @@ export class UIManager {
             });
         }
 
+        // Audio toggle button
+        if (this.elements.audioToggle) {
+            this.elements.audioToggle.addEventListener('click', () => {
+                const enabled = audioManager.toggle();
+                this.updateAudioToggle(enabled);
+                // Play click sound to confirm toggle
+                if (enabled) {
+                    audioManager.playClick();
+                }
+            });
+        }
+
         // Handle window resize
         window.addEventListener('resize', () => {
             this.detectTouchDevice();
         });
+    }
+
+    /**
+     * Update audio toggle button appearance
+     * @param {boolean} enabled - Whether audio is enabled
+     */
+    updateAudioToggle(enabled) {
+        if (!this.elements.audioToggle) return;
+
+        if (enabled) {
+            this.elements.audioToggle.textContent = '🔊';
+            this.elements.audioToggle.classList.remove('muted');
+            this.elements.audioToggle.title = 'Mute Sound';
+        } else {
+            this.elements.audioToggle.textContent = '🔇';
+            this.elements.audioToggle.classList.add('muted');
+            this.elements.audioToggle.title = 'Unmute Sound';
+        }
     }
 
     /**
