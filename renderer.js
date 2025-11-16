@@ -262,6 +262,77 @@ function drawGhastFireball(ctx, projectile, camera) {
 }
 
 /**
+ * Draws an explosion effect
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Object} explosion - Explosion object
+ * @param {Object} camera - Camera position
+ */
+export function drawExplosion(ctx, explosion, camera) {
+    const screenX = explosion.x - camera.x;
+    const screenY = explosion.y - camera.y;
+    const progress = explosion.elapsed / explosion.duration;
+    const alpha = 1 - progress; // Fade out over time
+
+    // Draw expanding fire rings
+    const numRings = 3;
+    for (let i = 0; i < numRings; i++) {
+        const ringOffset = i * 0.15; // Stagger the rings
+        const ringProgress = Math.min((progress + ringOffset) / (1 + ringOffset), 1);
+        const ringRadius = explosion.radius * ringProgress;
+        const ringAlpha = alpha * (1 - i * 0.2); // Outer rings fade faster
+
+        // Inner bright core (white/yellow)
+        if (i === 0 && ringProgress < 0.3) {
+            ctx.fillStyle = `rgba(255, 255, 200, ${ringAlpha * 0.8})`;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, ringRadius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Orange fire ring
+        ctx.strokeStyle = `rgba(255, 140, 0, ${ringAlpha * 0.7})`;
+        ctx.lineWidth = 8 - i * 2;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Red outer ring
+        ctx.strokeStyle = `rgba(255, 69, 0, ${ringAlpha * 0.5})`;
+        ctx.lineWidth = 6 - i * 1.5;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, ringRadius * 1.1, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // Draw final AOE indicator circle at max radius
+    if (progress > 0.5) {
+        const indicatorAlpha = alpha * 0.3;
+        ctx.strokeStyle = `rgba(255, 200, 100, ${indicatorAlpha})`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, explosion.maxRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Fire particles effect
+    if (progress < 0.7) {
+        const particleCount = 8;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const particleDistance = explosion.radius * (0.8 + Math.sin(progress * Math.PI * 4 + i) * 0.2);
+            const px = screenX + Math.cos(angle) * particleDistance;
+            const py = screenY + Math.sin(angle) * particleDistance;
+            const particleSize = 4 * (1 - progress);
+
+            ctx.fillStyle = `rgba(255, ${100 + i * 15}, 0, ${alpha * 0.6})`;
+            ctx.fillRect(px - particleSize / 2, py - particleSize / 2, particleSize, particleSize);
+        }
+    }
+}
+
+/**
  * Draws the tiled background
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Object} camera - Camera position
