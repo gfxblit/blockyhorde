@@ -394,3 +394,39 @@ body {
         max-width: 90%;
     }
 }
+
+/* Portrait orientation specific styles */
+@media (max-width: 850px) and (orientation: portrait) {
+    #gameContainer {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+        max-height: 100vh;
+        object-fit: contain;
+    }
+
+    #touchControls {
+        bottom: 60px;
+    }
+
+    #abilityUI {
+        bottom: 60px;
+    }
+}
+
+/* Landscape orientation specific styles */
+@media (max-width: 850px) and (orientation: landscape) {
+    #gameCanvas {
+        width: auto;
+        height: 100%;
+        max-width: 100vw;
+        object-fit: contain;
+    }
+}

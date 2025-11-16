@@ -2,11 +2,42 @@
  * Game Configuration
  * Central configuration object for all game parameters
  */
+
+/**
+ * Calculate canvas dimensions based on screen orientation
+ */
+function calculateCanvasDimensions() {
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const isMobile = window.innerWidth <= 850;
+
+    if (isMobile && isPortrait) {
+        // Portrait mode: use 9:16 aspect ratio (common for mobile)
+        // Base on width, calculate height
+        const baseWidth = Math.min(window.innerWidth, 600);
+        const baseHeight = Math.floor(baseWidth * (16 / 9));
+        return {
+            width: baseWidth,
+            height: baseHeight
+        };
+    } else if (isMobile) {
+        // Landscape mobile: use full viewport but maintain reasonable aspect
+        const baseHeight = Math.min(window.innerHeight, 600);
+        const baseWidth = Math.floor(baseHeight * (4 / 3));
+        return {
+            width: baseWidth,
+            height: baseHeight
+        };
+    } else {
+        // Desktop: use fixed 800x600
+        return {
+            width: 800,
+            height: 600
+        };
+    }
+}
+
 export const CONFIG = {
-    canvas: {
-        width: 800,
-        height: 600
-    },
+    canvas: calculateCanvasDimensions(),
     player: {
         size: 32,
         speed: 200,
