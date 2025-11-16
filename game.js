@@ -4,6 +4,7 @@
  */
 import { CONFIG } from './config.js';
 import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion, drawItem, drawOffScreenItemIndicators } from './renderer.js';
+import audioManager from './audio.js';
 
 /**
  * Main Game class
@@ -218,6 +219,9 @@ export class Game {
 
         this.enemies.push(boss);
         this.bossSpawned = true;
+
+        // Play boss spawn sound
+        audioManager.playBossSpawn();
     }
 
     /**
@@ -281,6 +285,9 @@ export class Game {
         };
 
         this.projectiles.push(projectile);
+
+        // Play boss projectile sound (reuse shoot sound with slight variation effect)
+        audioManager.playShoot();
     }
 
     /**
@@ -295,6 +302,9 @@ export class Game {
             const scaledDamage = Math.ceil(baseDamage * this.difficultyMultipliers.damage);
             this.player.hp -= scaledDamage;
             this.player.lastDamageTime = now;
+
+            // Play player hit sound
+            audioManager.playPlayerHit();
 
             if (this.player.hp <= 0) {
                 this.gameOver();
@@ -345,6 +355,9 @@ export class Game {
         };
 
         this.projectiles.push(projectile);
+
+        // Play shoot sound
+        audioManager.playShoot();
     }
 
     /**
@@ -406,16 +419,26 @@ export class Game {
                             // Remove projectile
                             this.projectiles.splice(i, 1);
 
+                            // Check if enemy died
+                            const enemyDied = enemy.hp <= 0;
+                            const isBossEnemy = enemy.type === 'boss';
+
                             // Remove enemy if dead
-                            if (enemy.hp <= 0) {
+                            if (enemyDied) {
                                 this.dropItem(enemy.x, enemy.y);
                                 this.enemies.splice(j, 1);
                                 this.state.kills++;
 
-                                // Reset boss spawned flag when boss is killed
-                                if (enemy.type === 'boss') {
+                                // Play appropriate death sound
+                                if (isBossEnemy) {
+                                    audioManager.playBossDeath();
                                     this.bossSpawned = false;
+                                } else {
+                                    audioManager.playEnemyHit();
                                 }
+                            } else {
+                                // Enemy was hit but not killed
+                                audioManager.playEnemyHit();
                             }
                             break;
                         }
@@ -458,6 +481,9 @@ export class Game {
             elapsed: 0
         });
 
+        let enemiesHit = 0;
+        let bossKilled = false;
+
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             const dx = enemy.x + CONFIG.enemy.size / 2 - explosionX;
@@ -475,13 +501,26 @@ export class Game {
                 const damage = isDirectHit ? baseDamage : baseDamage * CONFIG.ghastFireball.splashDamageMultiplier;
 
                 enemy.hp -= damage;
+                enemiesHit++;
 
                 // Remove enemy if dead
                 if (enemy.hp <= 0) {
+                    if (enemy.type === 'boss') {
+                        bossKilled = true;
+                    }
                     this.dropItem(enemy.x, enemy.y);
                     this.enemies.splice(i, 1);
                     this.state.kills++;
                 }
+            }
+        }
+
+        // Play appropriate sound effects
+        if (enemiesHit > 0) {
+            if (bossKilled) {
+                audioManager.playBossDeath();
+            } else {
+                audioManager.playEnemyHit();
             }
         }
     }
@@ -584,6 +623,9 @@ export class Game {
         };
 
         this.projectiles.push(projectile);
+
+        // Play fireball sound
+        audioManager.playFireball();
     }
 
     /**
@@ -649,6 +691,9 @@ export class Game {
     pickupItem(item, timestamp) {
         const itemConfig = CONFIG.items.types[item.type];
 
+        // Play item pickup sound
+        audioManager.playItemPickup();
+
         // Handle health items separately (instant heal, no buff)
         if (item.type === 'health') {
             const healAmount = Math.min(itemConfig.healthRestore, CONFIG.player.maxHP - this.player.hp);
@@ -700,6 +745,9 @@ export class Game {
             this.lastDifficultyLevel = currentDifficultyLevel;
             this.uiManager.showDifficultyNotification(currentDifficultyLevel, this.difficultyMultipliers);
 
+            // Play level up sound
+            audioManager.playLevelUp();
+
             // Spawn boss every 2 levels
             if (currentDifficultyLevel % 2 === 0 && !this.bossSpawned) {
                 this.spawnBoss();
@@ -732,6 +780,10 @@ export class Game {
      */
     gameOver() {
         this.state.isRunning = false;
+
+        // Play game over sound
+        audioManager.playGameOver();
+
         this.uiManager.showGameOver(this.state.startTime, this.state.currentTime, this.state.kills);
     }
 }
