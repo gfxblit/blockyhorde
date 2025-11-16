@@ -59,7 +59,7 @@ describe('AudioManager', () => {
       createOscillator: jest.fn(() => ({ ...mockOscillator })),
       createGain: jest.fn(() => ({ ...mockGainNode })),
       createBiquadFilter: jest.fn(() => ({ ...mockFilterNode })),
-      resume: jest.fn()
+      resume: jest.fn(() => Promise.resolve())
     };
 
     // Reset audioManager state
@@ -204,54 +204,52 @@ describe('AudioManager', () => {
   });
 
   describe('Resume Functionality', () => {
-    test('should resume suspended audio context', () => {
+    test('should resume suspended audio context', async () => {
       audioManager.init();
       audioManager.context.state = 'suspended';
 
-      audioManager.resume();
+      await audioManager.resume();
 
       expect(audioManager.context.resume).toHaveBeenCalled();
     });
 
-    test('should not resume if context is not suspended', () => {
+    test('should not resume if context is not suspended', async () => {
       audioManager.init();
       audioManager.context.state = 'running';
 
-      audioManager.resume();
+      await audioManager.resume();
 
       expect(audioManager.context.resume).not.toHaveBeenCalled();
     });
 
-    test('should not throw if context is null', () => {
-      expect(() => {
-        audioManager.resume();
-      }).not.toThrow();
+    test('should not throw if context is null', async () => {
+      await expect(async () => await audioManager.resume()).not.toThrow();
     });
   });
 
   describe('Play Method', () => {
-    test('should not play if not enabled', () => {
+    test('should not play if not enabled', async () => {
       audioManager.init();
       audioManager.enabled = false;
 
       const soundGenerator = jest.fn();
-      audioManager.play(soundGenerator);
+      await audioManager.play(soundGenerator);
 
       expect(soundGenerator).not.toHaveBeenCalled();
     });
 
-    test('should not play if not initialized', () => {
+    test('should not play if not initialized', async () => {
       const soundGenerator = jest.fn();
-      audioManager.play(soundGenerator);
+      await audioManager.play(soundGenerator);
 
       expect(soundGenerator).not.toHaveBeenCalled();
     });
 
-    test('should call sound generator when playing', () => {
+    test('should call sound generator when playing', async () => {
       audioManager.init();
 
       const soundGenerator = jest.fn();
-      audioManager.play(soundGenerator);
+      await audioManager.play(soundGenerator);
 
       expect(soundGenerator).toHaveBeenCalledWith(
         audioManager.context,
@@ -259,26 +257,24 @@ describe('AudioManager', () => {
       );
     });
 
-    test('should resume context before playing', () => {
+    test('should resume context before playing', async () => {
       audioManager.init();
       audioManager.context.state = 'suspended';
 
       const soundGenerator = jest.fn();
-      audioManager.play(soundGenerator);
+      await audioManager.play(soundGenerator);
 
       expect(audioManager.context.resume).toHaveBeenCalled();
     });
 
-    test('should handle errors in sound generator gracefully', () => {
+    test('should handle errors in sound generator gracefully', async () => {
       audioManager.init();
 
       const soundGenerator = jest.fn(() => {
         throw new Error('Sound generation failed');
       });
 
-      expect(() => {
-        audioManager.play(soundGenerator);
-      }).not.toThrow();
+      await expect(async () => await audioManager.play(soundGenerator)).not.toThrow();
     });
   });
 
@@ -287,44 +283,44 @@ describe('AudioManager', () => {
       audioManager.init();
     });
 
-    test('playShoot should not throw', () => {
-      expect(() => audioManager.playShoot()).not.toThrow();
+    test('playShoot should not throw', async () => {
+      await expect(async () => await audioManager.playShoot()).not.toThrow();
     });
 
-    test('playEnemyHit should not throw', () => {
-      expect(() => audioManager.playEnemyHit()).not.toThrow();
+    test('playEnemyHit should not throw', async () => {
+      await expect(async () => await audioManager.playEnemyHit()).not.toThrow();
     });
 
-    test('playPlayerHit should not throw', () => {
-      expect(() => audioManager.playPlayerHit()).not.toThrow();
+    test('playPlayerHit should not throw', async () => {
+      await expect(async () => await audioManager.playPlayerHit()).not.toThrow();
     });
 
-    test('playItemPickup should not throw', () => {
-      expect(() => audioManager.playItemPickup()).not.toThrow();
+    test('playItemPickup should not throw', async () => {
+      await expect(async () => await audioManager.playItemPickup()).not.toThrow();
     });
 
-    test('playFireball should not throw', () => {
-      expect(() => audioManager.playFireball()).not.toThrow();
+    test('playFireball should not throw', async () => {
+      await expect(async () => await audioManager.playFireball()).not.toThrow();
     });
 
-    test('playBossSpawn should not throw', () => {
-      expect(() => audioManager.playBossSpawn()).not.toThrow();
+    test('playBossSpawn should not throw', async () => {
+      await expect(async () => await audioManager.playBossSpawn()).not.toThrow();
     });
 
-    test('playBossDeath should not throw', () => {
-      expect(() => audioManager.playBossDeath()).not.toThrow();
+    test('playBossDeath should not throw', async () => {
+      await expect(async () => await audioManager.playBossDeath()).not.toThrow();
     });
 
-    test('playLevelUp should not throw', () => {
-      expect(() => audioManager.playLevelUp()).not.toThrow();
+    test('playLevelUp should not throw', async () => {
+      await expect(async () => await audioManager.playLevelUp()).not.toThrow();
     });
 
-    test('playGameOver should not throw', () => {
-      expect(() => audioManager.playGameOver()).not.toThrow();
+    test('playGameOver should not throw', async () => {
+      await expect(async () => await audioManager.playGameOver()).not.toThrow();
     });
 
-    test('playClick should not throw', () => {
-      expect(() => audioManager.playClick()).not.toThrow();
+    test('playClick should not throw', async () => {
+      await expect(async () => await audioManager.playClick()).not.toThrow();
     });
   });
 
@@ -333,31 +329,31 @@ describe('AudioManager', () => {
       audioManager.init();
     });
 
-    test('playShoot should create oscillator and gain', () => {
-      audioManager.playShoot();
+    test('playShoot should create oscillator and gain', async () => {
+      await audioManager.playShoot();
 
       expect(audioManager.context.createOscillator).toHaveBeenCalled();
       expect(audioManager.context.createGain).toHaveBeenCalled();
     });
 
-    test('playEnemyHit should create oscillator, gain, and filter', () => {
-      audioManager.playEnemyHit();
+    test('playEnemyHit should create oscillator, gain, and filter', async () => {
+      await audioManager.playEnemyHit();
 
       expect(audioManager.context.createOscillator).toHaveBeenCalled();
       expect(audioManager.context.createGain).toHaveBeenCalled();
       expect(audioManager.context.createBiquadFilter).toHaveBeenCalled();
     });
 
-    test('playFireball should create two oscillators, gain, and filter', () => {
-      audioManager.playFireball();
+    test('playFireball should create two oscillators, gain, and filter', async () => {
+      await audioManager.playFireball();
 
       expect(audioManager.context.createOscillator).toHaveBeenCalledTimes(2);
       expect(audioManager.context.createGain).toHaveBeenCalled();
       expect(audioManager.context.createBiquadFilter).toHaveBeenCalled();
     });
 
-    test('playBossDeath should create two oscillators and gain', () => {
-      audioManager.playBossDeath();
+    test('playBossDeath should create two oscillators and gain', async () => {
+      await audioManager.playBossDeath();
 
       expect(audioManager.context.createOscillator).toHaveBeenCalledTimes(2);
       expect(audioManager.context.createGain).toHaveBeenCalled();
@@ -365,13 +361,13 @@ describe('AudioManager', () => {
   });
 
   describe('Sound Effects - Disabled State', () => {
-    test('should not play sounds when disabled', () => {
+    test('should not play sounds when disabled', async () => {
       audioManager.init();
       audioManager.enabled = false;
 
-      audioManager.playShoot();
-      audioManager.playEnemyHit();
-      audioManager.playPlayerHit();
+      await audioManager.playShoot();
+      await audioManager.playEnemyHit();
+      await audioManager.playPlayerHit();
 
       // createOscillator should not be called
       expect(audioManager.context.createOscillator).not.toHaveBeenCalled();
@@ -379,11 +375,11 @@ describe('AudioManager', () => {
   });
 
   describe('Sound Effects - Not Initialized', () => {
-    test('should not play sounds when not initialized', () => {
+    test('should not play sounds when not initialized', async () => {
       const consoleSpy = jest.spyOn(console, 'log');
 
-      audioManager.playShoot();
-      audioManager.playEnemyHit();
+      await audioManager.playShoot();
+      await audioManager.playEnemyHit();
 
       // Should not attempt to create audio nodes
       expect(consoleSpy).not.toHaveBeenCalledWith('Audio system initialized');
@@ -395,64 +391,64 @@ describe('AudioManager', () => {
       audioManager.init();
     });
 
-    test('playShoot should set onended handler for cleanup', () => {
-      audioManager.playShoot();
+    test('playShoot should set onended handler for cleanup', async () => {
+      await audioManager.playShoot();
 
       // The onended handler should be set
       // We verify this by checking that the oscillator has an onended property set
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playEnemyHit should set onended handler for cleanup', () => {
-      audioManager.playEnemyHit();
+    test('playEnemyHit should set onended handler for cleanup', async () => {
+      await audioManager.playEnemyHit();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playPlayerHit should set onended handler for cleanup', () => {
-      audioManager.playPlayerHit();
+    test('playPlayerHit should set onended handler for cleanup', async () => {
+      await audioManager.playPlayerHit();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playItemPickup should set onended handler for cleanup', () => {
-      audioManager.playItemPickup();
+    test('playItemPickup should set onended handler for cleanup', async () => {
+      await audioManager.playItemPickup();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playFireball should set onended handler for cleanup', () => {
-      audioManager.playFireball();
+    test('playFireball should set onended handler for cleanup', async () => {
+      await audioManager.playFireball();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playBossSpawn should set onended handler for cleanup', () => {
-      audioManager.playBossSpawn();
+    test('playBossSpawn should set onended handler for cleanup', async () => {
+      await audioManager.playBossSpawn();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playBossDeath should set onended handler for cleanup', () => {
-      audioManager.playBossDeath();
+    test('playBossDeath should set onended handler for cleanup', async () => {
+      await audioManager.playBossDeath();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playLevelUp should set onended handler for cleanup', () => {
-      audioManager.playLevelUp();
+    test('playLevelUp should set onended handler for cleanup', async () => {
+      await audioManager.playLevelUp();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playGameOver should set onended handler for cleanup', () => {
-      audioManager.playGameOver();
+    test('playGameOver should set onended handler for cleanup', async () => {
+      await audioManager.playGameOver();
 
       expect(mockOscillator.onended).toBeDefined();
     });
 
-    test('playClick should set onended handler for cleanup', () => {
-      audioManager.playClick();
+    test('playClick should set onended handler for cleanup', async () => {
+      await audioManager.playClick();
 
       expect(mockOscillator.onended).toBeDefined();
     });

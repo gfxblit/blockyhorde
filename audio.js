@@ -23,6 +23,13 @@ class AudioManager {
             this.masterGain.connect(this.context.destination);
             this.initialized = true;
             console.log('Audio system initialized');
+
+            // Resume context immediately for Safari (it may start suspended)
+            if (this.context.state === 'suspended') {
+                this.context.resume().catch(e => {
+                    console.warn('Failed to resume audio context on init:', e);
+                });
+            }
         } catch (e) {
             console.warn('Web Audio API not supported', e);
             this.enabled = false;
@@ -31,10 +38,15 @@ class AudioManager {
 
     /**
      * Resume audio context (needed for browsers that suspend audio contexts)
+     * @returns {Promise<void>}
      */
-    resume() {
+    async resume() {
         if (this.context && this.context.state === 'suspended') {
-            this.context.resume();
+            try {
+                await this.context.resume();
+            } catch (e) {
+                console.warn('Failed to resume audio context:', e);
+            }
         }
     }
 
@@ -61,11 +73,11 @@ class AudioManager {
      * Play a sound effect
      * @param {Function} soundGenerator - Function that creates and returns audio nodes
      */
-    play(soundGenerator) {
+    async play(soundGenerator) {
         if (!this.enabled || !this.initialized || !this.context) return;
 
         try {
-            this.resume();
+            await this.resume();
             soundGenerator(this.context, this.masterGain);
         } catch (e) {
             console.warn('Error playing sound:', e);
