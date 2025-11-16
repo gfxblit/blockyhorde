@@ -156,27 +156,44 @@ export function drawEnemy(ctx, enemy, camera) {
     const screenX = enemy.x - camera.x;
     const screenY = enemy.y - camera.y;
 
+    // Determine if this is a boss
+    const isBoss = enemy.type === 'boss';
+    const enemySize = isBoss ? CONFIG.boss.size : CONFIG.enemy.size;
+    const enemyColor = isBoss ? CONFIG.boss.color : '#90cc90';
+
     // Only draw if on screen
-    if (screenX < -50 || screenX > CONFIG.canvas.width + 50 ||
-        screenY < -50 || screenY > CONFIG.canvas.height + 50) {
+    if (screenX < -100 || screenX > CONFIG.canvas.width + 100 ||
+        screenY < -100 || screenY > CONFIG.canvas.height + 100) {
         return;
     }
 
-    // Draw enemy as a zombie-like voxel
-    createVoxelTexture(ctx, screenX, screenY, enemy.x, enemy.y, CONFIG.enemy.size, '#90cc90');
+    // Draw glow effect for bosses
+    if (isBoss) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = CONFIG.boss.color;
+    }
 
-    // Add zombie face details
+    // Draw enemy as a zombie-like voxel (or larger boss)
+    createVoxelTexture(ctx, screenX, screenY, enemy.x, enemy.y, enemySize, enemyColor);
+
+    // Reset shadow
+    if (isBoss) {
+        ctx.shadowBlur = 0;
+    }
+
+    // Add face details (scaled for bosses)
+    const scale = isBoss ? 2 : 1;
     ctx.fillStyle = '#000';
     // Eyes
-    ctx.fillRect(screenX + 6, screenY + 10, 4, 4);
-    ctx.fillRect(screenX + 18, screenY + 10, 4, 4);
-    // Mouth
-    ctx.fillStyle = '#333';
-    ctx.fillRect(screenX + 8, screenY + 18, 12, 4);
+    ctx.fillRect(screenX + 6 * scale, screenY + 10 * scale, 4 * scale, 4 * scale);
+    ctx.fillRect(screenX + 18 * scale, screenY + 10 * scale, 4 * scale, 4 * scale);
+    // Mouth (larger/angrier for bosses)
+    ctx.fillStyle = isBoss ? '#ff0000' : '#333';
+    ctx.fillRect(screenX + 8 * scale, screenY + 18 * scale, 12 * scale, 4 * scale);
 
     // Draw health bar above enemy
     if (enemy.maxHP && enemy.hp !== undefined) {
-        drawHealthBar(ctx, screenX, screenY, enemy.hp, enemy.maxHP, CONFIG.enemy.size);
+        drawHealthBar(ctx, screenX, screenY, enemy.hp, enemy.maxHP, enemySize);
     }
 }
 
@@ -190,6 +207,8 @@ export function drawProjectile(ctx, projectile, camera) {
     // Route to appropriate drawer based on type
     if (projectile.type === 'ghastFireball') {
         drawGhastFireball(ctx, projectile, camera);
+    } else if (projectile.type === 'bossProjectile') {
+        drawBossProjectile(ctx, projectile, camera);
     } else {
         drawRegularProjectile(ctx, projectile, camera);
     }
@@ -217,6 +236,34 @@ function drawRegularProjectile(ctx, projectile, camera) {
     ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
     ctx.lineWidth = 2;
     ctx.strokeRect(screenX - 2, screenY - 2, CONFIG.projectile.size + 4, CONFIG.projectile.size + 4);
+}
+
+/**
+ * Draws a boss projectile
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Object} projectile - Projectile object
+ * @param {Object} camera - Camera position
+ */
+function drawBossProjectile(ctx, projectile, camera) {
+    const screenX = projectile.x - camera.x;
+    const screenY = projectile.y - camera.y;
+    const size = projectile.size;
+
+    // Draw boss projectile as a fiery orange/red sphere
+    ctx.fillStyle = CONFIG.boss.projectileColor;
+    ctx.fillRect(screenX, screenY, size, size);
+
+    // Add bright center
+    ctx.fillStyle = '#ffaa00';
+    ctx.fillRect(screenX + size / 4, screenY + size / 4, size / 2, size / 2);
+
+    // Outer glow
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = CONFIG.boss.projectileColor;
+    ctx.strokeStyle = 'rgba(255, 100, 0, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(screenX - 2, screenY - 2, size + 4, size + 4);
+    ctx.shadowBlur = 0;
 }
 
 /**
