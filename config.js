@@ -30,7 +30,7 @@ export const CONFIG = {
     ghastFireball: {
         name: 'GhastFireball',
         type: 'active',
-        cooldown: 60000,              // 60 seconds in milliseconds
+        cooldown: 10000,              // 10 seconds in milliseconds
         size: 24,                     // Large white sphere
         speed: 150,                   // 0.75x player speed (200 * 0.75)
         baseDamage: 2.0,              // 200% of player base damage
