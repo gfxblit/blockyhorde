@@ -66,16 +66,21 @@ export class InputManager {
     setupTouchInput() {
         this.joystickBase = document.getElementById('joystickBase');
         this.joystickStick = document.getElementById('joystickStick');
+        this.touchControls = document.getElementById('touchControls');
 
-        if (!this.joystickBase || !this.joystickStick) {
+        if (!this.joystickBase || !this.joystickStick || !this.touchControls) {
             console.warn('Joystick elements not found');
             return;
         }
 
-        this.joystickBase.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
-        this.joystickBase.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
-        this.joystickBase.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
-        this.joystickBase.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
+        // Listen for touch events on the entire game container for dynamic joystick
+        const gameContainer = document.getElementById('gameContainer');
+        if (gameContainer) {
+            gameContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+            gameContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+            gameContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+            gameContainer.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
+        }
     }
 
     /**
@@ -104,13 +109,34 @@ export class InputManager {
      * Handle touch start event
      */
     handleTouchStart(e) {
+        // Ignore if touch is on the ability button
+        if (e.target.closest('#abilityButton')) {
+            return;
+        }
+
         e.preventDefault();
         const touch = e.touches[0];
-        const rect = this.joystickBase.getBoundingClientRect();
 
-        this.touch.active = true;
-        this.touch.startX = rect.left + rect.width / 2;
-        this.touch.startY = rect.top + rect.height / 2;
+        // Only activate joystick if not already active
+        if (!this.touch.active) {
+            // Position joystick at touch location
+            const gameContainer = document.getElementById('gameContainer');
+            const rect = gameContainer.getBoundingClientRect();
+
+            // Calculate position relative to game container
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            // Position the joystick base at touch point
+            this.touchControls.style.left = `${x}px`;
+            this.touchControls.style.top = `${y}px`;
+            this.touchControls.style.transform = 'translate(-50%, -50%)';
+            this.touchControls.style.opacity = '1';
+
+            this.touch.active = true;
+            this.touch.startX = touch.clientX;
+            this.touch.startY = touch.clientY;
+        }
     }
 
     /**
@@ -149,6 +175,8 @@ export class InputManager {
      * Handle touch end event
      */
     handleTouchEnd(e) {
+        if (!this.touch.active) return;
+
         e.preventDefault();
         this.touch.active = false;
         this.touch.dx = 0;
@@ -156,6 +184,9 @@ export class InputManager {
 
         // Reset joystick visual position
         this.joystickStick.style.transform = 'translate(-50%, -50%)';
+
+        // Hide the joystick
+        this.touchControls.style.opacity = '0';
     }
 
     /**
@@ -167,9 +198,14 @@ export class InputManager {
                               (navigator.msMaxTouchPoints > 0);
 
         if (isTouchDevice || window.innerWidth <= 850) {
-            document.getElementById('touchControls').style.display = 'block';
-            document.querySelector('.instructions.desktop').style.display = 'none';
-            document.querySelector('.instructions.mobile').style.display = 'block';
+            const touchControls = document.getElementById('touchControls');
+            if (touchControls) {
+                touchControls.style.display = 'block';
+            }
+            const desktopInstructions = document.querySelector('.instructions.desktop');
+            const mobileInstructions = document.querySelector('.instructions.mobile');
+            if (desktopInstructions) desktopInstructions.style.display = 'none';
+            if (mobileInstructions) mobileInstructions.style.display = 'block';
         }
     }
 
