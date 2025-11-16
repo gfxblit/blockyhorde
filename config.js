@@ -33,8 +33,8 @@ export const CONFIG = {
         cooldown: 10000,              // 10 seconds in milliseconds
         size: 24,                     // Large white sphere
         speed: 150,                   // 0.75x player speed (200 * 0.75)
-        baseDamage: 2.0,              // 200% of player base damage
-        splashRadius: 64,             // 2x player hitbox size (32 * 2)
+        baseDamage: 4.0,              // 400% of player base damage
+        splashRadius: 128,            // 4x player hitbox size (32 * 4)
         splashDamageMultiplier: 0.5,  // 50% splash damage
         color: '#f8f8f8',             // White color for the fireball
         maxCharges: 1,                // Level 1-4: single charge
