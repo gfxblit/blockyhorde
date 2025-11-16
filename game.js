@@ -53,6 +53,7 @@ export class Game {
             damage: 1.0,
             hp: 1.0
         };
+        this.lastDifficultyLevel = 0;
 
         // Active abilities
         this.abilities = {
@@ -453,6 +454,13 @@ export class Game {
             100,
             CONFIG.enemy.initialSpawnInterval - spawnReduction
         );
+
+        // Check if we've reached a new difficulty level (every minute)
+        const currentDifficultyLevel = Math.floor(timeInMinutes);
+        if (currentDifficultyLevel > this.lastDifficultyLevel && currentDifficultyLevel > 0) {
+            this.lastDifficultyLevel = currentDifficultyLevel;
+            this.uiManager.showDifficultyNotification(currentDifficultyLevel, this.difficultyMultipliers);
+        }
     }
 
     /**
