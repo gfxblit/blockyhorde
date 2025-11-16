@@ -595,8 +595,8 @@ export class Game {
             return;
         }
 
-        // Randomly choose item type (equal chance between attack speed, damage, and speed)
-        const itemTypes = ['attackSpeed', 'damage', 'speed'];
+        // Randomly choose item type (equal chance between all item types)
+        const itemTypes = ['attackSpeed', 'damage', 'speed', 'health'];
         const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
 
         const item = {
@@ -648,6 +648,17 @@ export class Game {
      */
     pickupItem(item, timestamp) {
         const itemConfig = CONFIG.items.types[item.type];
+
+        // Handle health items separately (instant heal, no buff)
+        if (item.type === 'health') {
+            const healAmount = Math.min(itemConfig.healthRestore, CONFIG.player.maxHP - this.player.hp);
+            this.player.hp = Math.min(this.player.hp + itemConfig.healthRestore, CONFIG.player.maxHP);
+
+            // Show UI notification with actual heal amount
+            this.uiManager.showItemPickup(item.type, healAmount);
+            return;
+        }
+
         const buff = this.player.buffs[item.type];
 
         if (itemConfig.stackable && buff.stacks < itemConfig.maxStacks) {

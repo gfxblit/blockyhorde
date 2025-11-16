@@ -234,10 +234,13 @@ export class UIManager {
         } else if (itemType === 'speed') {
             notificationHTML = `<span class="item-icon">🏃</span> Speed +${stacks}`;
             cssClass = 'speed';
+        } else if (itemType === 'health') {
+            notificationHTML = `<span class="item-icon">💚</span> Healed +${stacks}`;
+            cssClass = 'health';
         }
 
         // Remove previous classes
-        this.elements.itemPickupNotification.classList.remove('attack-speed', 'damage', 'speed');
+        this.elements.itemPickupNotification.classList.remove('attack-speed', 'damage', 'speed', 'health');
 
         // Set content and class
         this.elements.itemPickupNotification.innerHTML = notificationHTML;
