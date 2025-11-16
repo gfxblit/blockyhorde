@@ -211,10 +211,12 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 0%;
+    top: 0;
     background: rgba(0, 0, 0, 0.7);
-    transition: height 0.1s linear;
-    border-radius: 50%;
+    transition: clip-path 0.1s linear;
+    clip-path: circle(50% at 50% 50%);
+    transform-origin: bottom;
+    transform: scaleY(0);
     z-index: 1;
 }
 
