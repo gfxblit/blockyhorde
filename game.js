@@ -3,7 +3,7 @@
  * Core game logic and state management
  */
 import { CONFIG } from './config.js';
-import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion } from './renderer.js';
+import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion, drawItem } from './renderer.js';
 
 /**
  * Main Game class
@@ -35,13 +35,24 @@ export class Game {
             vx: 0,
             vy: 0,
             hp: CONFIG.player.maxHP,
-            lastDamageTime: 0
+            lastDamageTime: 0,
+            buffs: {
+                attackSpeed: {
+                    stacks: 0,
+                    expirationTime: 0
+                },
+                damage: {
+                    stacks: 0,
+                    expirationTime: 0
+                }
+            }
         };
 
         // Game entities
         this.enemies = [];
         this.projectiles = [];
         this.explosions = []; // Visual explosion effects
+        this.items = []; // Dropped items
 
         // Spawn timing
         this.lastEnemySpawn = 0;
@@ -100,6 +111,7 @@ export class Game {
         this.updateEnemies(deltaTime);
         this.updateProjectiles(deltaTime);
         this.updateExplosions(deltaTime);
+        this.updateItems(timestamp);
         this.updateDifficulty();
         this.updateAbilities(timestamp);
 
@@ -114,7 +126,11 @@ export class Game {
             this.lastEnemySpawn = timestamp;
         }
 
-        if (timestamp - this.lastProjectileSpawn > CONFIG.projectile.interval) {
+        // Calculate modified projectile interval based on attack speed buffs
+        const attackSpeedReduction = this.player.buffs.attackSpeed.stacks * CONFIG.items.types.attackSpeed.speedReduction;
+        const modifiedInterval = Math.max(50, CONFIG.projectile.interval - attackSpeedReduction);
+
+        if (timestamp - this.lastProjectileSpawn > modifiedInterval) {
             this.spawnProjectile();
             this.lastProjectileSpawn = timestamp;
         }
@@ -239,13 +255,18 @@ export class Game {
             angle = Math.atan2(dy, dx);
         }
 
+        // Calculate modified damage based on damage buffs
+        const baseDamage = 1;
+        const damageBonus = this.player.buffs.damage.stacks * CONFIG.items.types.damage.damageBonus;
+        const totalDamage = baseDamage + damageBonus;
+
         const projectile = {
             type: 'regular',
             x: this.player.worldX + CONFIG.player.size / 2,
             y: this.player.worldY + CONFIG.player.size / 2,
             vx: Math.cos(angle) * CONFIG.projectile.speed,
             vy: Math.sin(angle) * CONFIG.projectile.speed,
-            damage: 1,
+            damage: totalDamage,
             size: CONFIG.projectile.size
         };
 
@@ -296,6 +317,7 @@ export class Game {
 
                         // Remove enemy if dead
                         if (enemy.hp <= 0) {
+                            this.dropItem(enemy.x, enemy.y);
                             this.enemies.splice(j, 1);
                             this.state.kills++;
                         }
@@ -359,6 +381,7 @@ export class Game {
 
                 // Remove enemy if dead
                 if (enemy.hp <= 0) {
+                    this.dropItem(enemy.x, enemy.y);
                     this.enemies.splice(i, 1);
                     this.state.kills++;
                 }
@@ -467,6 +490,80 @@ export class Game {
     }
 
     /**
+     * Drop an item at enemy death location
+     */
+    dropItem(x, y) {
+        // Check drop rate
+        if (Math.random() > CONFIG.items.dropRate) {
+            return;
+        }
+
+        // Randomly choose item type (50/50 split between attack speed and damage)
+        const itemTypes = ['attackSpeed', 'damage'];
+        const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+
+        const item = {
+            type: itemType,
+            x: x + CONFIG.enemy.size / 2 - CONFIG.items.size / 2,
+            y: y + CONFIG.enemy.size / 2 - CONFIG.items.size / 2,
+            spawnTime: this.state.currentTime
+        };
+
+        this.items.push(item);
+    }
+
+    /**
+     * Update items - handle pickup and despawn
+     */
+    updateItems(timestamp) {
+        // Update buff expiration
+        for (const buffType in this.player.buffs) {
+            const buff = this.player.buffs[buffType];
+            if (buff.stacks > 0 && timestamp >= buff.expirationTime) {
+                buff.stacks = 0;
+            }
+        }
+
+        // Check for item pickup and despawn
+        for (let i = this.items.length - 1; i >= 0; i--) {
+            const item = this.items[i];
+
+            // Check if item should despawn
+            if (timestamp - item.spawnTime > CONFIG.items.despawnTime) {
+                this.items.splice(i, 1);
+                continue;
+            }
+
+            // Check for pickup (magnet radius)
+            const dx = item.x + CONFIG.items.size / 2 - (this.player.worldX + CONFIG.player.size / 2);
+            const dy = item.y + CONFIG.items.size / 2 - (this.player.worldY + CONFIG.player.size / 2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < CONFIG.items.magnetRadius) {
+                this.pickupItem(item, timestamp);
+                this.items.splice(i, 1);
+            }
+        }
+    }
+
+    /**
+     * Apply item effect to player
+     */
+    pickupItem(item, timestamp) {
+        const itemConfig = CONFIG.items.types[item.type];
+        const buff = this.player.buffs[item.type];
+
+        if (itemConfig.stackable && buff.stacks < itemConfig.maxStacks) {
+            buff.stacks++;
+        } else if (!itemConfig.stackable) {
+            buff.stacks = 1;
+        }
+
+        // Reset/extend buff duration
+        buff.expirationTime = timestamp + itemConfig.duration;
+    }
+
+    /**
      * Update difficulty based on time
      */
     updateDifficulty() {
@@ -502,6 +599,7 @@ export class Game {
 
         drawBackground(this.ctx, this.state.camera);
 
+        this.items.forEach(item => drawItem(this.ctx, item, this.state.camera));
         this.enemies.forEach(enemy => drawEnemy(this.ctx, enemy, this.state.camera));
         this.projectiles.forEach(proj => drawProjectile(this.ctx, proj, this.state.camera));
         this.explosions.forEach(explosion => drawExplosion(this.ctx, explosion, this.state.camera));

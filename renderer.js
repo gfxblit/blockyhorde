@@ -333,6 +333,43 @@ export function drawExplosion(ctx, explosion, camera) {
 }
 
 /**
+ * Draws an item
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Object} item - Item object
+ * @param {Object} camera - Camera position
+ */
+export function drawItem(ctx, item, camera) {
+    const screenX = item.x - camera.x;
+    const screenY = item.y - camera.y;
+
+    // Only draw if on screen
+    if (screenX < -50 || screenX > CONFIG.canvas.width + 50 ||
+        screenY < -50 || screenY > CONFIG.canvas.height + 50) {
+        return;
+    }
+
+    const itemConfig = CONFIG.items.types[item.type];
+    const size = CONFIG.items.size;
+
+    // Draw item as a glowing cube
+    createVoxelTexture(ctx, screenX, screenY, item.x, item.y, size, itemConfig.color);
+
+    // Add glow effect
+    const glowColor = itemConfig.color;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = glowColor;
+    ctx.strokeStyle = glowColor;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(screenX - 2, screenY - 2, size + 4, size + 4);
+    ctx.shadowBlur = 0;
+
+    // Add floating animation (subtle bobbing)
+    const bobOffset = Math.sin(Date.now() / 300) * 2;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillRect(screenX + 4, screenY + 4 + bobOffset, size - 8, size - 8);
+}
+
+/**
  * Draws the tiled background
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Object} camera - Camera position

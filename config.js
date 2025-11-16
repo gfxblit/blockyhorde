@@ -57,5 +57,29 @@ export const CONFIG = {
         damageMultiplierPerMinute: 0.8,   // +80% damage per minute
         hpMultiplierPerMinute: 0.6,       // +60% HP per minute
         spawnQuadraticFactor: 350         // Quadratic spawn rate scaling
+    },
+    items: {
+        size: 16,
+        magnetRadius: 40,                 // Auto-pickup radius
+        despawnTime: 30000,               // Items despawn after 30 seconds
+        dropRate: 0.15,                   // 15% chance per enemy kill
+        types: {
+            attackSpeed: {
+                name: 'Attack Speed',
+                color: '#00ffff',         // Cyan
+                speedReduction: 50,       // Reduces attack interval by 50ms
+                duration: 15000,          // 15 seconds
+                stackable: true,          // Multiple pickups stack duration
+                maxStacks: 5              // Max 5 stacks
+            },
+            damage: {
+                name: 'Damage Boost',
+                color: '#ff4444',         // Red
+                damageBonus: 1,           // +1 damage per pickup
+                duration: 15000,          // 15 seconds
+                stackable: true,
+                maxStacks: 5
+            }
+        }
     }
 };
