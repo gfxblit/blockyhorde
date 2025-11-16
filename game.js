@@ -486,8 +486,8 @@ export class Game {
             CONFIG.enemy.initialSpawnInterval - spawnReduction
         );
 
-        // Check if we've reached a new difficulty level (every minute)
-        const currentDifficultyLevel = Math.floor(timeInMinutes);
+        // Check if we've reached a new difficulty level (based on timePerReduction config)
+        const currentDifficultyLevel = Math.floor(timeInSeconds / CONFIG.difficulty.timePerReduction);
         if (currentDifficultyLevel > this.lastDifficultyLevel && currentDifficultyLevel > 0) {
             this.lastDifficultyLevel = currentDifficultyLevel;
             this.uiManager.showDifficultyNotification(currentDifficultyLevel, this.difficultyMultipliers);
