@@ -95,7 +95,8 @@ export function drawPlayer(ctx, player) {
     const screenY = (CONFIG.canvas.height - CONFIG.player.size) / 2;
 
     // Draw player as a voxel character head
-    createVoxelTexture(ctx, screenX, screenY, player.worldX, player.worldY, CONFIG.player.size, CONFIG.player.color);
+    // Use fixed coordinates (0, 0) for texture seed to prevent flickering when player moves
+    createVoxelTexture(ctx, screenX, screenY, 0, 0, CONFIG.player.size, CONFIG.player.color);
 
     // Add face details
     ctx.fillStyle = '#000';
