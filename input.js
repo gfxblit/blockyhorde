@@ -46,6 +46,12 @@ export class InputManager {
         document.addEventListener('keydown', (e) => {
             // Use e.code for physical key position (works across keyboard layouts)
             this.keys[e.code] = true;
+
+            // Prevent default behavior for game control keys
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown' ||
+                e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                e.preventDefault();
+            }
         });
 
         document.addEventListener('keyup', (e) => {
