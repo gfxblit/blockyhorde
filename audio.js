@@ -421,6 +421,70 @@ class AudioManager {
             };
         });
     }
+
+    /**
+     * Explosion sound - Powerful blast for special projectile impacts
+     */
+    playExplosion() {
+        this.play((ctx, destination) => {
+            // Create a powerful multi-layered explosion sound
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            const osc3 = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            // Low rumble layer
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(120, ctx.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.4);
+
+            // Mid-range explosion
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(200, ctx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.4);
+
+            // High frequency crack
+            osc3.type = 'triangle';
+            osc3.frequency.setValueAtTime(600, ctx.currentTime);
+            osc3.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+
+            // Filter for realistic explosion character
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.4);
+            filter.Q.value = 1.5;
+
+            // Envelope with quick attack and decay
+            gain.gain.setValueAtTime(0.35, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+
+            // Connect all nodes
+            osc1.connect(filter);
+            osc2.connect(filter);
+            osc3.connect(filter);
+            filter.connect(gain);
+            gain.connect(destination);
+
+            // Start and stop oscillators
+            osc1.start(ctx.currentTime);
+            osc2.start(ctx.currentTime);
+            osc3.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.4);
+            osc2.stop(ctx.currentTime + 0.4);
+            osc3.stop(ctx.currentTime + 0.2);
+
+            // Clean up after sound finishes
+            osc1.onended = () => {
+                osc1.disconnect();
+                osc2.disconnect();
+                osc3.disconnect();
+                filter.disconnect();
+                gain.disconnect();
+            };
+        });
+    }
 }
 
 // Create singleton instance
