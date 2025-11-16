@@ -3,7 +3,7 @@
  * Core game logic and state management
  */
 import { CONFIG } from './config.js';
-import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion, drawItem } from './renderer.js';
+import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion, drawItem, drawOffScreenItemIndicators } from './renderer.js';
 
 /**
  * Main Game class
@@ -711,6 +711,9 @@ export class Game {
         this.explosions.forEach(explosion => drawExplosion(this.ctx, explosion, this.state.camera));
 
         drawPlayer(this.ctx, this.player);
+
+        // Draw off-screen item indicators on top of everything
+        drawOffScreenItemIndicators(this.ctx, this.items, this.state.camera);
     }
 
     /**

@@ -417,6 +417,91 @@ export function drawItem(ctx, item, camera) {
 }
 
 /**
+ * Draws indicators for off-screen items
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Array} items - Array of item objects
+ * @param {Object} camera - Camera position
+ */
+export function drawOffScreenItemIndicators(ctx, items, camera) {
+    const margin = 20; // Distance from edge of screen
+    const indicatorSize = 12;
+    const arrowSize = 8;
+
+    items.forEach(item => {
+        const screenX = item.x - camera.x;
+        const screenY = item.y - camera.y;
+
+        // Check if item is off-screen
+        const isOffScreen = (
+            screenX < 0 ||
+            screenX > CONFIG.canvas.width ||
+            screenY < 0 ||
+            screenY > CONFIG.canvas.height
+        );
+
+        if (!isOffScreen) {
+            return; // Item is on screen, no indicator needed
+        }
+
+        // Calculate indicator position at edge of screen
+        let indicatorX, indicatorY;
+        let angle;
+
+        // Clamp position to screen edges with margin
+        indicatorX = Math.max(margin, Math.min(CONFIG.canvas.width - margin, screenX));
+        indicatorY = Math.max(margin, Math.min(CONFIG.canvas.height - margin, screenY));
+
+        // Calculate angle to item from indicator position
+        const dx = screenX - indicatorX;
+        const dy = screenY - indicatorY;
+        angle = Math.atan2(dy, dx);
+
+        // Get item color
+        const itemConfig = CONFIG.items.types[item.type];
+        const itemColor = itemConfig.color;
+
+        // Draw indicator background (circular)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.beginPath();
+        ctx.arc(indicatorX, indicatorY, indicatorSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw colored border
+        ctx.strokeStyle = itemColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(indicatorX, indicatorY, indicatorSize, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Draw arrow pointing to item
+        ctx.fillStyle = itemColor;
+        ctx.save();
+        ctx.translate(indicatorX, indicatorY);
+        ctx.rotate(angle);
+
+        // Arrow shape (triangle)
+        ctx.beginPath();
+        ctx.moveTo(arrowSize, 0);
+        ctx.lineTo(-arrowSize / 2, -arrowSize / 2);
+        ctx.lineTo(-arrowSize / 2, arrowSize / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+
+        // Add subtle glow effect
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = itemColor;
+        ctx.strokeStyle = itemColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(indicatorX, indicatorY, indicatorSize + 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    });
+}
+
+/**
  * Draws the tiled background
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Object} camera - Camera position
