@@ -46,18 +46,18 @@ export const CONFIG = {
     },
     enemy: {
         size: 28,
-        speed: 80,
+        speed: 50,
         damage: 10,
         damageInterval: 1000,
-        initialSpawnInterval: 1500,
+        initialSpawnInterval: 750,
         color: '#80cc80'
     },
     boss: {
         size: 56,                         // Double the size of regular enemies
-        speed: 60,                        // Slower than regular enemies
+        speed: 40,                        // Slower than regular enemies
         damage: 20,                       // Double damage
         damageInterval: 1000,
-        health: 15,                       // 15x base health
+        health: 8,                        // Reduced base health
         color: '#cc4444',                 // Red color
         projectileInterval: 2000,         // Fire every 2 seconds
         projectileSpeed: 250,
