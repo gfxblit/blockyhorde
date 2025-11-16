@@ -158,7 +158,8 @@ export class Game {
         const enemy = {
             x: this.player.worldX + Math.cos(angle) * distance,
             y: this.player.worldY + Math.sin(angle) * distance,
-            hp: scaledHP
+            hp: scaledHP,
+            maxHP: scaledHP
         };
 
         this.enemies.push(enemy);

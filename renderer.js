@@ -107,6 +107,46 @@ export function drawPlayer(ctx, player) {
 }
 
 /**
+ * Draws a health bar above an entity
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {number} screenX - Screen X position
+ * @param {number} screenY - Screen Y position
+ * @param {number} currentHP - Current health points
+ * @param {number} maxHP - Maximum health points
+ * @param {number} width - Width of the health bar
+ */
+function drawHealthBar(ctx, screenX, screenY, currentHP, maxHP, width) {
+    const barHeight = 4;
+    const barY = screenY - 8; // Position above the entity
+    const healthPercent = Math.max(0, Math.min(1, currentHP / maxHP));
+
+    // Background (dark gray)
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(screenX, barY, width, barHeight);
+
+    // Health fill (red to green gradient based on health)
+    if (healthPercent > 0) {
+        // Color transitions: red (low) -> yellow (medium) -> green (high)
+        let fillColor;
+        if (healthPercent > 0.6) {
+            fillColor = '#00ff00'; // Green
+        } else if (healthPercent > 0.3) {
+            fillColor = '#ffff00'; // Yellow
+        } else {
+            fillColor = '#ff0000'; // Red
+        }
+
+        ctx.fillStyle = fillColor;
+        ctx.fillRect(screenX, barY, width * healthPercent, barHeight);
+    }
+
+    // Border (black outline)
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(screenX, barY, width, barHeight);
+}
+
+/**
  * Draws an enemy
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Object} enemy - Enemy object
@@ -133,6 +173,11 @@ export function drawEnemy(ctx, enemy, camera) {
     // Mouth
     ctx.fillStyle = '#333';
     ctx.fillRect(screenX + 8, screenY + 18, 12, 4);
+
+    // Draw health bar above enemy
+    if (enemy.maxHP && enemy.hp !== undefined) {
+        drawHealthBar(ctx, screenX, screenY, enemy.hp, enemy.maxHP, CONFIG.enemy.size);
+    }
 }
 
 /**
