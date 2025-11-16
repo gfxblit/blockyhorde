@@ -131,6 +131,13 @@ export const CONFIG = {
                 duration: Infinity,       // Permanent (never expires)
                 stackable: true,
                 maxStacks: 5
+            },
+            health: {
+                name: 'Health Pack',
+                color: '#ff0088',         // Pink
+                healthRestore: 30,        // Restores 30 HP
+                duration: 0,              // Instant effect
+                stackable: false          // Health is restored immediately
             }
         }
     }

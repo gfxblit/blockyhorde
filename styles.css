@@ -304,6 +304,16 @@ body {
     box-shadow: 0 3px 8px rgba(255, 68, 68, 0.4), 0 0 10px rgba(255, 68, 68, 0.3);
 }
 
+.item-pickup-notification.speed {
+    border-color: #00ff00;
+    box-shadow: 0 3px 8px rgba(0, 255, 0, 0.4), 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.item-pickup-notification.health {
+    border-color: #ff0088;
+    box-shadow: 0 3px 8px rgba(255, 0, 136, 0.4), 0 0 10px rgba(255, 0, 136, 0.3);
+}
+
 .item-pickup-notification .item-icon {
     display: inline-block;
     font-size: 20px;
