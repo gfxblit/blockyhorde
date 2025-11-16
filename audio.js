@@ -94,6 +94,12 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.1);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -124,6 +130,13 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.15);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                filter.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -147,6 +160,12 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.2);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -171,6 +190,12 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.2);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -210,6 +235,14 @@ class AudioManager {
             osc2.start(ctx.currentTime);
             osc1.stop(ctx.currentTime + 0.3);
             osc2.stop(ctx.currentTime + 0.3);
+
+            // Clean up after sound finishes
+            osc1.onended = () => {
+                osc1.disconnect();
+                osc2.disconnect();
+                filter.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -235,6 +268,12 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.5);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -271,6 +310,13 @@ class AudioManager {
             osc2.start(ctx.currentTime);
             osc1.stop(ctx.currentTime + 0.6);
             osc2.stop(ctx.currentTime + 0.6);
+
+            // Clean up after sound finishes
+            osc1.onended = () => {
+                osc1.disconnect();
+                osc2.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -296,6 +342,12 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.3);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -321,6 +373,12 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.8);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
         });
     }
 
@@ -343,6 +401,12 @@ class AudioManager {
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.05);
+
+            // Clean up after sound finishes
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
         });
     }
 }
