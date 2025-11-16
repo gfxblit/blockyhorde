@@ -19,9 +19,11 @@ export class UIManager {
             finalKills: document.getElementById('finalKills'),
             playAgainButton: null,
             abilityCooldown: document.getElementById('abilityCooldown'),
-            abilityCharges: document.getElementById('abilityCharges')
+            abilityCharges: document.getElementById('abilityCharges'),
+            difficultyNotification: document.getElementById('difficultyNotification')
         };
 
+        this.notificationTimeout = null;
         this.initializeEventListeners();
     }
 
@@ -166,5 +168,39 @@ export class UIManager {
         const minutes = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * Show difficulty increase notification
+     * @param {number} level - Current difficulty level (minute)
+     * @param {Object} multipliers - Current difficulty multipliers
+     */
+    showDifficultyNotification(level, multipliers) {
+        // Clear any existing timeout
+        if (this.notificationTimeout) {
+            clearTimeout(this.notificationTimeout);
+        }
+
+        // Format multiplier percentages
+        const speedPercent = Math.round((multipliers.speed - 1) * 100);
+        const damagePercent = Math.round((multipliers.damage - 1) * 100);
+        const hpPercent = Math.round((multipliers.hp - 1) * 100);
+
+        // Create notification content
+        const notificationHTML = `
+            <div class="difficulty-level">⚠ DIFFICULTY INCREASED ⚠</div>
+            <div>Level ${level}</div>
+            <div class="difficulty-stats">
+                Speed +${speedPercent}% | Damage +${damagePercent}% | HP +${hpPercent}%
+            </div>
+        `;
+
+        this.elements.difficultyNotification.innerHTML = notificationHTML;
+        this.elements.difficultyNotification.classList.add('show');
+
+        // Auto-hide after 3 seconds
+        this.notificationTimeout = setTimeout(() => {
+            this.elements.difficultyNotification.classList.remove('show');
+        }, 3000);
     }
 }
