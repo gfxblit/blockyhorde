@@ -131,13 +131,13 @@ body {
 
 #touchControls {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
     width: 150px;
     height: 150px;
     display: none;
     z-index: 15;
-    pointer-events: all;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s ease;
 }
 
 #joystickBase {
@@ -147,6 +147,7 @@ body {
     border-radius: 50%;
     background: radial-gradient(circle, rgba(100, 100, 100, 0.3), rgba(50, 50, 50, 0.5));
     border: 3px solid rgba(255, 255, 255, 0.3);
+    pointer-events: all;
 }
 
 #joystickStick {
@@ -316,10 +317,6 @@ body {
 
     .instructions.desktop {
         display: none;
-    }
-
-    #touchControls {
-        display: block;
     }
 
     #ui {
