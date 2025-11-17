@@ -168,35 +168,33 @@ describe('Item and Buff System', () => {
       expect(game.player.buffs.attackSpeed.stacks).toBe(CONFIG.items.types.attackSpeed.maxStacks);
     });
 
-    test('should set expiration time on pickup', () => {
+    test('should set expiration time to Infinity on pickup', () => {
       const timestamp = 5000;
       game.pickupItem({ type: 'attackSpeed' }, timestamp);
 
-      const expectedExpiration = timestamp + CONFIG.items.types.attackSpeed.duration;
-      expect(game.player.buffs.attackSpeed.expirationTime).toBe(expectedExpiration);
+      expect(game.player.buffs.attackSpeed.expirationTime).toBe(Infinity);
     });
 
-    test('should expire after duration', () => {
+    test('should be permanent (never expire)', () => {
       const timestamp = 5000;
       game.pickupItem({ type: 'attackSpeed' }, timestamp);
 
       expect(game.player.buffs.attackSpeed.stacks).toBe(1);
 
-      // Update past expiration time
-      game.updateItems(timestamp + CONFIG.items.types.attackSpeed.duration + 1);
+      // Update way past normal expiration time
+      game.updateItems(timestamp + 1000000);
 
-      expect(game.player.buffs.attackSpeed.stacks).toBe(0);
+      expect(game.player.buffs.attackSpeed.stacks).toBe(1); // Still has buff
     });
 
-    test('should extend duration on additional pickup', () => {
+    test('should maintain Infinity expiration on additional pickup', () => {
       const timestamp1 = 5000;
       game.pickupItem({ type: 'attackSpeed' }, timestamp1);
 
       const timestamp2 = 10000;
       game.pickupItem({ type: 'attackSpeed' }, timestamp2);
 
-      const expectedExpiration = timestamp2 + CONFIG.items.types.attackSpeed.duration;
-      expect(game.player.buffs.attackSpeed.expirationTime).toBe(expectedExpiration);
+      expect(game.player.buffs.attackSpeed.expirationTime).toBe(Infinity);
       expect(game.player.buffs.attackSpeed.stacks).toBe(2);
     });
   });
@@ -232,15 +230,16 @@ describe('Item and Buff System', () => {
       expect(game.projectiles[0].damage).toBe(expectedDamage);
     });
 
-    test('should expire after duration', () => {
+    test('should be permanent (never expire)', () => {
       const timestamp = 5000;
       game.pickupItem({ type: 'damage' }, timestamp);
 
       expect(game.player.buffs.damage.stacks).toBe(1);
 
-      game.updateItems(timestamp + CONFIG.items.types.damage.duration + 1);
+      // Update way past normal expiration time
+      game.updateItems(timestamp + 1000000);
 
-      expect(game.player.buffs.damage.stacks).toBe(0);
+      expect(game.player.buffs.damage.stacks).toBe(1); // Still has buff
     });
   });
 
@@ -330,18 +329,18 @@ describe('Item and Buff System', () => {
       expect(game.player.buffs.speed.stacks).toBe(1);
     });
 
-    test('should expire temporary buffs independently', () => {
+    test('should keep all buffs permanently', () => {
       const timestamp = 5000;
       game.pickupItem({ type: 'attackSpeed' }, timestamp);
       game.pickupItem({ type: 'damage' }, timestamp);
       game.pickupItem({ type: 'speed' }, timestamp);
 
-      // Expire attack speed
-      game.updateItems(timestamp + CONFIG.items.types.attackSpeed.duration + 1);
+      // Update way past normal expiration time
+      game.updateItems(timestamp + 1000000);
 
-      expect(game.player.buffs.attackSpeed.stacks).toBe(0);
-      expect(game.player.buffs.damage.stacks).toBe(0); // Same duration
-      expect(game.player.buffs.speed.stacks).toBe(1); // Permanent
+      expect(game.player.buffs.attackSpeed.stacks).toBe(1); // Now permanent
+      expect(game.player.buffs.damage.stacks).toBe(1); // Now permanent
+      expect(game.player.buffs.speed.stacks).toBe(1); // Always permanent
     });
   });
 });

@@ -658,13 +658,7 @@ export class Game {
      * Update items - handle pickup and despawn
      */
     updateItems(timestamp) {
-        // Update buff expiration (speed buffs are permanent)
-        for (const buffType in this.player.buffs) {
-            const buff = this.player.buffs[buffType];
-            if (buffType !== 'speed' && buff.stacks > 0 && timestamp >= buff.expirationTime) {
-                buff.stacks = 0;
-            }
-        }
+        // All buffs are now permanent - no expiration needed
 
         // Check for item pickup and despawn
         for (let i = this.items.length - 1; i >= 0; i--) {
