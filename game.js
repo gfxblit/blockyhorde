@@ -127,7 +127,7 @@ export class Game {
 
         // Fade out damage tint
         if (this.player.damageTintAlpha > 0) {
-            this.player.damageTintAlpha = Math.max(0, this.player.damageTintAlpha - deltaTime * 2);
+            this.player.damageTintAlpha = Math.max(0, this.player.damageTintAlpha - deltaTime * CONFIG.player.damageTintFadeSpeed);
         }
 
         // Check for ability input
@@ -310,7 +310,7 @@ export class Game {
             this.player.lastDamageTime = now;
 
             // Trigger damage tint effect
-            this.player.damageTintAlpha = 0.3;
+            this.player.damageTintAlpha = CONFIG.player.damageTintAlpha;
 
             // Play player hit sound
             audioManager.playPlayerHit();
@@ -399,7 +399,7 @@ export class Game {
                     this.projectiles.splice(i, 1);
 
                     // Trigger damage tint effect
-                    this.player.damageTintAlpha = 0.3;
+                    this.player.damageTintAlpha = CONFIG.player.damageTintAlpha;
 
                     if (this.player.hp <= 0) {
                         this.gameOver();
