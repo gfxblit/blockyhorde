@@ -69,17 +69,25 @@ class AudioManager {
 
     /**
      * Ensure audio is ready to play (for iOS Safari compatibility)
-     * Must be called synchronously within user gesture handler
+     * Must be called synchronously within user gesture handler.
+     *
+     * Note: This initiates audio context resumption synchronously (within the user
+     * gesture call stack), but the actual resumption completes asynchronously.
+     * This satisfies iOS Safari's requirement that resume() be called directly
+     * within a user interaction handler.
      */
     ensureResumed() {
         if (!this.initialized) {
             this.init();
         }
 
-        // For iOS, we need to resume synchronously within the user gesture
+        // For iOS, we need to initiate resume synchronously within the user gesture
         if (this.context && this.context.state === 'suspended') {
             // Start the resume process immediately (don't await)
-            this.context.resume();
+            // Add error handling for the async completion
+            this.context.resume().catch(e => {
+                console.warn('Failed to resume audio context:', e);
+            });
         }
     }
 

@@ -269,6 +269,27 @@ describe('AudioManager', () => {
 
       expect(() => audioManager.ensureResumed()).not.toThrow();
     });
+
+    test('should handle resume errors gracefully', async () => {
+      audioManager.init();
+      audioManager.context.state = 'suspended';
+      audioManager.context.resume = jest.fn(() => Promise.reject(new Error('Resume failed')));
+
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      // Call ensureResumed (which initiates resume but doesn't await)
+      audioManager.ensureResumed();
+
+      // Wait for the promise to reject and error handler to run
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'Failed to resume audio context:',
+        expect.any(Error)
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
   });
 
   describe('iOS Detection', () => {
