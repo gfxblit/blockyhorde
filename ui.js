@@ -39,9 +39,17 @@ export class UIManager {
         const playAgainButton = this.elements.gameOver.querySelector('button');
         if (playAgainButton) {
             this.elements.playAgainButton = playAgainButton;
-            playAgainButton.addEventListener('click', () => {
+
+            // Handle play again for both touch and mouse
+            const handlePlayAgain = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 location.reload();
-            });
+            };
+
+            // Add both touch and click listeners for better touch device support
+            playAgainButton.addEventListener('touchend', handlePlayAgain, { passive: false });
+            playAgainButton.addEventListener('click', handlePlayAgain);
         }
 
         // Audio toggle button
