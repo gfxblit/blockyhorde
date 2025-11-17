@@ -112,7 +112,7 @@ export const CONFIG = {
                 name: 'Attack Speed',
                 color: '#00ffff',         // Cyan
                 speedReduction: 50,       // Reduces attack interval by 50ms
-                duration: 15000,          // 15 seconds
+                duration: Infinity,       // Permanent (never expires)
                 stackable: true,          // Multiple pickups stack duration
                 maxStacks: 5              // Max 5 stacks
             },
@@ -120,7 +120,7 @@ export const CONFIG = {
                 name: 'Damage Boost',
                 color: '#ff4444',         // Red
                 damageBonus: 1,           // +1 damage per pickup
-                duration: 15000,          // 15 seconds
+                duration: Infinity,       // Permanent (never expires)
                 stackable: true,
                 maxStacks: 5
             },
