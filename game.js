@@ -41,6 +41,7 @@ export class Game {
             vy: 0,
             hp: CONFIG.player.maxHP,
             lastDamageTime: 0,
+            damageTintAlpha: 0,
             buffs: {
                 attackSpeed: {
                     stacks: 0,
@@ -123,6 +124,11 @@ export class Game {
         this.updateItems(timestamp);
         this.updateDifficulty();
         this.updateAbilities(timestamp);
+
+        // Fade out damage tint
+        if (this.player.damageTintAlpha > 0) {
+            this.player.damageTintAlpha = Math.max(0, this.player.damageTintAlpha - deltaTime * CONFIG.player.damageTintFadeSpeed);
+        }
 
         // Check for ability input
         if (this.inputManager.isAbilityPressed()) {
@@ -303,6 +309,9 @@ export class Game {
             this.player.hp -= scaledDamage;
             this.player.lastDamageTime = now;
 
+            // Trigger damage tint effect
+            this.player.damageTintAlpha = CONFIG.player.damageTintAlpha;
+
             // Play player hit sound
             audioManager.playPlayerHit();
 
@@ -388,6 +397,9 @@ export class Game {
                 )) {
                     this.player.hp -= proj.damage;
                     this.projectiles.splice(i, 1);
+
+                    // Trigger damage tint effect
+                    this.player.damageTintAlpha = CONFIG.player.damageTintAlpha;
 
                     if (this.player.hp <= 0) {
                         this.gameOver();
@@ -776,6 +788,12 @@ export class Game {
 
         // Draw off-screen item indicators on top of everything
         drawOffScreenItemIndicators(this.ctx, this.items, this.state.camera);
+
+        // Draw damage tint overlay
+        if (this.player.damageTintAlpha > 0) {
+            this.ctx.fillStyle = `rgba(255, 0, 0, ${this.player.damageTintAlpha})`;
+            this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+        }
     }
 
     /**

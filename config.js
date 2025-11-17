@@ -42,7 +42,9 @@ export const CONFIG = {
         size: 32,
         speed: 200,
         maxHP: 100,
-        color: '#f0c080'
+        color: '#f0c080',
+        damageTintAlpha: 0.3,
+        damageTintFadeSpeed: 2
     },
     enemy: {
         size: 28,

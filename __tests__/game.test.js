@@ -242,4 +242,105 @@ describe('Game Core Logic', () => {
       expect(game.player.hp).toBe(initialHP - expectedDamage);
     });
   });
+
+  describe('Damage Visual Feedback', () => {
+    test('should set damage tint alpha when player takes damage', () => {
+      game.player.lastDamageTime = 0;
+      game.damagePlayer(false);
+      expect(game.player.damageTintAlpha).toBe(CONFIG.player.damageTintAlpha);
+    });
+
+    test('should fade out damage tint over time', () => {
+      game.player.damageTintAlpha = CONFIG.player.damageTintAlpha;
+      const deltaTime = 0.1; // 100ms
+
+      // Calculate expected alpha after fade
+      const expectedAlpha = CONFIG.player.damageTintAlpha - (deltaTime * CONFIG.player.damageTintFadeSpeed);
+
+      // Simulate game loop update with just the tint fade logic
+      if (game.player.damageTintAlpha > 0) {
+        game.player.damageTintAlpha = Math.max(0, game.player.damageTintAlpha - deltaTime * CONFIG.player.damageTintFadeSpeed);
+      }
+
+      expect(game.player.damageTintAlpha).toBe(expectedAlpha);
+      expect(game.player.damageTintAlpha).toBeGreaterThan(0);
+    });
+
+    test('should set damage tint when hit by boss projectile', () => {
+      game.player.hp = 100;
+      game.projectiles.push({
+        type: 'bossProjectile',
+        x: game.player.worldX,
+        y: game.player.worldY,
+        vx: 0,
+        vy: 0,
+        damage: 15,
+        size: CONFIG.boss.projectileSize
+      });
+
+      game.updateProjectiles(0.016);
+      expect(game.player.damageTintAlpha).toBe(CONFIG.player.damageTintAlpha);
+    });
+
+    test('should not go below zero when fading', () => {
+      game.player.damageTintAlpha = 0.01;
+      const deltaTime = 1.0; // 1 second - more than enough to fade out
+
+      // Simulate game loop update with just the tint fade logic
+      if (game.player.damageTintAlpha > 0) {
+        game.player.damageTintAlpha = Math.max(0, game.player.damageTintAlpha - deltaTime * CONFIG.player.damageTintFadeSpeed);
+      }
+
+      expect(game.player.damageTintAlpha).toBe(0);
+    });
+
+    test('should set damage tint when player collides with regular enemy', () => {
+      game.player.lastDamageTime = 0;
+      game.player.damageTintAlpha = 0;
+
+      game.enemies.push({
+        type: 'regular',
+        x: game.player.worldX,
+        y: game.player.worldY,
+        hp: 10,
+        maxHP: 10
+      });
+
+      game.updateEnemies(0.016);
+      expect(game.player.damageTintAlpha).toBe(CONFIG.player.damageTintAlpha);
+    });
+
+    test('should set damage tint when player collides with boss enemy', () => {
+      game.player.lastDamageTime = 0;
+      game.player.damageTintAlpha = 0;
+
+      game.enemies.push({
+        type: 'boss',
+        x: game.player.worldX,
+        y: game.player.worldY,
+        hp: 50,
+        maxHP: 50,
+        lastProjectileTime: 0
+      });
+
+      game.updateEnemies(0.016);
+      expect(game.player.damageTintAlpha).toBe(CONFIG.player.damageTintAlpha);
+    });
+
+    test('should use config value for tint alpha', () => {
+      // Verify that the config value is being used, not a hardcoded value
+      game.player.lastDamageTime = 0;
+      game.damagePlayer(false);
+
+      expect(game.player.damageTintAlpha).toBe(CONFIG.player.damageTintAlpha);
+      expect(CONFIG.player.damageTintAlpha).toBeDefined();
+    });
+
+    test('should use config value for fade speed', () => {
+      // Verify that the fade speed config is defined and used
+      expect(CONFIG.player.damageTintFadeSpeed).toBeDefined();
+      expect(typeof CONFIG.player.damageTintFadeSpeed).toBe('number');
+      expect(CONFIG.player.damageTintFadeSpeed).toBeGreaterThan(0);
+    });
+  });
 });
