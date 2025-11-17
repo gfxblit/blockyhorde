@@ -2,6 +2,7 @@
  * Input Module
  * Handles keyboard and touch input
  */
+import audioManager from './audio.js';
 
 const MAX_JOYSTICK_DISTANCE = 45;
 
@@ -44,6 +45,9 @@ export class InputManager {
      */
     setupKeyboardInput() {
         document.addEventListener('keydown', (e) => {
+            // Ensure audio is ready on any key press (critical for iOS Safari)
+            audioManager.ensureResumed();
+
             // Use e.code for physical key position (works across keyboard layouts)
             this.keys[e.code] = true;
 
@@ -96,6 +100,8 @@ export class InputManager {
 
         this.abilityButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            // Ensure audio is ready when ability button is pressed (critical for iOS Safari)
+            audioManager.ensureResumed();
             this.abilityTouchPressed = true;
         }, { passive: false });
 
@@ -109,6 +115,9 @@ export class InputManager {
      * Handle touch start event
      */
     handleTouchStart(e) {
+        // Ensure audio is ready on any touch (critical for iOS Safari)
+        audioManager.ensureResumed();
+
         // Ignore if touch is on the ability button
         if (e.target.closest('#abilityButton')) {
             return;

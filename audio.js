@@ -8,6 +8,8 @@ class AudioManager {
         this.enabled = true;
         this.volume = 0.3; // Default volume (0.0 to 1.0)
         this.initialized = false;
+        this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        this.setupVisibilityHandler();
     }
 
     /**
@@ -26,7 +28,9 @@ class AudioManager {
 
             // Resume context immediately for Safari (it may start suspended)
             if (this.context.state === 'suspended') {
-                this.context.resume().catch(e => {
+                this.context.resume().then(() => {
+                    console.log('Audio context resumed on init');
+                }).catch(e => {
                     console.warn('Failed to resume audio context on init:', e);
                 });
             }
@@ -37,16 +41,45 @@ class AudioManager {
     }
 
     /**
+     * Setup page visibility handler to resume audio when page becomes visible
+     */
+    setupVisibilityHandler() {
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.initialized) {
+                this.resume();
+            }
+        });
+    }
+
+    /**
      * Resume audio context (needed for browsers that suspend audio contexts)
+     * IMPORTANT: For iOS Safari, this must be called directly in a user gesture handler
      * @returns {Promise<void>}
      */
     async resume() {
         if (this.context && this.context.state === 'suspended') {
             try {
                 await this.context.resume();
+                console.log('Audio context resumed');
             } catch (e) {
                 console.warn('Failed to resume audio context:', e);
             }
+        }
+    }
+
+    /**
+     * Ensure audio is ready to play (for iOS Safari compatibility)
+     * Must be called synchronously within user gesture handler
+     */
+    ensureResumed() {
+        if (!this.initialized) {
+            this.init();
+        }
+
+        // For iOS, we need to resume synchronously within the user gesture
+        if (this.context && this.context.state === 'suspended') {
+            // Start the resume process immediately (don't await)
+            this.context.resume();
         }
     }
 
