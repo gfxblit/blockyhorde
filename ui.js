@@ -47,6 +47,8 @@ export class UIManager {
         // Audio toggle button
         if (this.elements.audioToggle) {
             this.elements.audioToggle.addEventListener('click', () => {
+                // Ensure audio is ready on click (critical for iOS Safari)
+                audioManager.ensureResumed();
                 const enabled = audioManager.toggle();
                 this.updateAudioToggle(enabled);
                 // Play click sound to confirm toggle

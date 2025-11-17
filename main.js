@@ -68,6 +68,9 @@ function initialize() {
     game.start();
 
     // Initialize audio on first user interaction
+    // Note: Audio will be initialized and resumed automatically via input handlers
+    // This provides better iOS Safari compatibility by ensuring audio context
+    // is resumed within the user gesture call stack
     let audioInitialized = false;
     const initAudio = () => {
         if (!audioInitialized) {
@@ -77,6 +80,8 @@ function initialize() {
     };
 
     // Listen for any user interaction to initialize audio
+    // These ensure early initialization, but audio will also be resumed
+    // on every subsequent interaction via the input handlers
     document.addEventListener('keydown', initAudio, { once: true });
     document.addEventListener('touchstart', initAudio, { once: true });
     document.addEventListener('click', initAudio, { once: true });

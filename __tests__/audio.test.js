@@ -72,6 +72,17 @@ describe('AudioManager', () => {
     // Mock AudioContext constructor
     global.AudioContext = jest.fn(() => mockAudioContext);
     global.window = { AudioContext: global.AudioContext };
+
+    // Mock document for visibility change handler
+    global.document = {
+      addEventListener: jest.fn(),
+      hidden: false
+    };
+
+    // Mock navigator for iOS detection
+    global.navigator = {
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    };
   });
 
   afterEach(() => {
@@ -224,6 +235,83 @@ describe('AudioManager', () => {
 
     test('should not throw if context is null', async () => {
       await expect(async () => await audioManager.resume()).not.toThrow();
+    });
+  });
+
+  describe('ensureResumed Functionality', () => {
+    test('should initialize audio if not initialized', () => {
+      audioManager.ensureResumed();
+
+      expect(audioManager.initialized).toBe(true);
+    });
+
+    test('should resume suspended context synchronously', () => {
+      audioManager.init();
+      audioManager.context.state = 'suspended';
+
+      audioManager.ensureResumed();
+
+      expect(audioManager.context.resume).toHaveBeenCalled();
+    });
+
+    test('should not resume if context is running', () => {
+      audioManager.init();
+      audioManager.context.state = 'running';
+
+      audioManager.ensureResumed();
+
+      expect(audioManager.context.resume).not.toHaveBeenCalled();
+    });
+
+    test('should not throw if context is null', () => {
+      audioManager.context = null;
+      audioManager.initialized = false;
+
+      expect(() => audioManager.ensureResumed()).not.toThrow();
+    });
+
+    test('should handle resume errors gracefully', async () => {
+      audioManager.init();
+      audioManager.context.state = 'suspended';
+      audioManager.context.resume = jest.fn(() => Promise.reject(new Error('Resume failed')));
+
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      // Call ensureResumed (which initiates resume but doesn't await)
+      audioManager.ensureResumed();
+
+      // Wait for the promise to reject and error handler to run
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'Failed to resume audio context:',
+        expect.any(Error)
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+  });
+
+  describe('iOS Detection', () => {
+    test('should detect iPhone', () => {
+      const iphoneUserAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)';
+      const isIOS = /iPad|iPhone|iPod/.test(iphoneUserAgent);
+
+      expect(isIOS).toBe(true);
+    });
+
+    test('should detect iPad', () => {
+      const ipadUserAgent = 'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X)';
+      const isIOS = /iPad|iPhone|iPod/.test(ipadUserAgent);
+
+      expect(isIOS).toBe(true);
+    });
+
+    test('should not detect non-iOS devices', () => {
+      const windowsUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)';
+      const isIOS = /iPad|iPhone|iPod/.test(windowsUserAgent);
+
+      expect(isIOS).toBe(false);
     });
   });
 
