@@ -158,6 +158,146 @@ body {
     border-color: #888;
 }
 
+/* Upgrade Selection Modal */
+#upgradeSelection {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 30px 40px;
+    border: 4px solid #ff8800;
+    color: white;
+    text-align: center;
+    display: none;
+    z-index: 25;
+    pointer-events: all;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+}
+
+#upgradeSelection h1 {
+    font-size: 42px;
+    color: #ffaa00;
+    margin-bottom: 10px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 170, 0, 0.5);
+}
+
+#upgradeSelection .upgrade-subtitle {
+    font-size: 18px;
+    color: #aaa;
+    margin-bottom: 25px;
+}
+
+.upgrade-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.upgrade-card {
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+    border: 3px solid #555;
+    border-radius: 12px;
+    padding: 20px;
+    width: 200px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.upgrade-card:hover {
+    border-color: #ffaa00;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3);
+}
+
+.upgrade-card:active {
+    transform: translateY(-2px);
+}
+
+.upgrade-card.current-ability {
+    border-color: #4CAF50;
+}
+
+.upgrade-card.current-ability::before {
+    content: 'CURRENT';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #4CAF50;
+    color: white;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.upgrade-card.new-ability {
+    border-color: #ff4444;
+}
+
+.upgrade-card.new-ability::before {
+    content: 'NEW';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff4444;
+    color: white;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.upgrade-card-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    border: 3px solid #444;
+    background: linear-gradient(145deg, #333, #222);
+}
+
+.upgrade-card-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.upgrade-card-level {
+    font-size: 14px;
+    color: #ffaa00;
+    margin-bottom: 10px;
+}
+
+.upgrade-card-description {
+    font-size: 13px;
+    color: #aaa;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    min-height: 40px;
+}
+
+.upgrade-card-effect {
+    font-size: 14px;
+    color: #4CAF50;
+    font-weight: bold;
+    padding: 8px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
 .instructions {
     position: absolute;
     bottom: 15px;
@@ -408,6 +548,35 @@ body {
         font-size: 14px;
         padding: 6px 18px;
     }
+
+    #upgradeSelection {
+        padding: 20px;
+        max-width: 95%;
+    }
+
+    #upgradeSelection h1 {
+        font-size: 32px;
+    }
+
+    .upgrade-card {
+        width: 160px;
+        padding: 15px;
+    }
+
+    .upgrade-card-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+
+    .upgrade-card-title {
+        font-size: 16px;
+    }
+
+    .upgrade-card-description {
+        font-size: 12px;
+        min-height: 35px;
+    }
 }
 
 @media (max-width: 500px) {
@@ -444,6 +613,34 @@ body {
         font-size: 12px;
         padding: 5px 15px;
         max-width: 90%;
+    }
+
+    #upgradeSelection {
+        padding: 15px;
+    }
+
+    #upgradeSelection h1 {
+        font-size: 24px;
+    }
+
+    .upgrade-card {
+        width: 140px;
+        padding: 12px;
+    }
+
+    .upgrade-card-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+
+    .upgrade-card-title {
+        font-size: 14px;
+    }
+
+    .upgrade-card-description {
+        font-size: 11px;
+        min-height: 30px;
     }
 }
 

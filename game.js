@@ -3,7 +3,7 @@
  * Core game logic and state management
  */
 import { CONFIG } from './config.js';
-import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion, drawItem, drawOffScreenItemIndicators } from './renderer.js';
+import { drawPlayer, drawEnemy, drawProjectile, drawBackground, drawExplosion, drawItem, drawOffScreenItemIndicators, drawExpandingRing } from './renderer.js';
 import audioManager from './audio.js';
 
 /**
@@ -63,6 +63,7 @@ export class Game {
         this.projectiles = [];
         this.explosions = []; // Visual explosion effects
         this.items = []; // Dropped items
+        this.expandingRings = []; // Active expanding ring abilities
 
         // Spawn timing
         this.lastEnemySpawn = 0;
@@ -120,6 +121,7 @@ export class Game {
         this.updatePlayer(deltaTime);
         this.updateEnemies(deltaTime);
         this.updateProjectiles(deltaTime);
+        this.updateExpandingRings(deltaTime);
         this.updateExplosions(deltaTime);
         this.updateItems(timestamp);
         this.updateDifficulty();
@@ -132,7 +134,13 @@ export class Game {
 
         // Check for ability input
         if (this.inputManager.isAbilityPressed()) {
-            this.useGhastFireball();
+            if (this.abilities.ghastFireball) {
+                this.useGhastFireball();
+            } else if (this.abilities.explodingRing) {
+                this.useExplodingRing();
+            } else if (this.abilities.heal) {
+                this.useHeal();
+            }
         }
 
         // Spawn entities
@@ -444,7 +452,7 @@ export class Game {
                                 // Play appropriate death sound
                                 if (isBossEnemy) {
                                     audioManager.playBossDeath();
-                                    this.bossSpawned = false;
+                                    this.handleBossDefeat();
                                 } else {
                                     audioManager.playEnemyHit();
                                 }
@@ -456,6 +464,65 @@ export class Game {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Update expanding ring abilities
+     */
+    updateExpandingRings(deltaTime) {
+        for (let i = this.expandingRings.length - 1; i >= 0; i--) {
+            const ring = this.expandingRings[i];
+
+            // Expand the ring
+            ring.currentRadius += ring.expansionSpeed * deltaTime;
+
+            // Check collision with enemies
+            for (let j = 0; j < this.enemies.length; j++) {
+                const enemy = this.enemies[j];
+
+                // Skip if already hit by this ring
+                if (ring.hitEnemies.has(enemy)) continue;
+
+                // Calculate distance from ring center to enemy
+                const dx = enemy.x - ring.x;
+                const dy = enemy.y - ring.y;
+                const distanceToEnemy = Math.sqrt(dx * dx + dy * dy);
+
+                // Check if enemy is within the ring (within the ring width)
+                const innerRadius = ring.currentRadius - ring.ringWidth;
+                const outerRadius = ring.currentRadius;
+
+                if (distanceToEnemy >= innerRadius && distanceToEnemy <= outerRadius) {
+                    // Hit the enemy
+                    enemy.hp -= ring.damage;
+                    ring.hitEnemies.add(enemy);
+
+                    // Check if enemy died
+                    if (enemy.hp <= 0) {
+                        const isBoss = enemy.type === 'boss';
+                        this.dropItem(enemy.x, enemy.y);
+                        this.enemies.splice(j, 1);
+                        this.state.kills++;
+
+                        if (isBoss) {
+                            audioManager.playBossDeath();
+                            this.handleBossDefeat();
+                        } else {
+                            audioManager.playEnemyHit();
+                        }
+
+                        j--; // Adjust index after removal
+                    } else {
+                        audioManager.playEnemyHit();
+                    }
+                }
+            }
+
+            // Remove ring if it has reached maximum radius
+            if (ring.currentRadius >= ring.maxRadius) {
+                this.expandingRings.splice(i, 1);
             }
         }
     }
@@ -534,6 +601,7 @@ export class Game {
         if (enemiesHit > 0) {
             if (bossKilled) {
                 audioManager.playBossDeath();
+                this.handleBossDefeat();
             } else {
                 audioManager.playEnemyHit();
             }
@@ -554,7 +622,10 @@ export class Game {
      * Update ability cooldowns and recharge
      */
     updateAbilities(timestamp) {
-        const ability = this.abilities.ghastFireball;
+        // Update the active ability (only one can be active at a time)
+        const ability = this.abilities.ghastFireball || this.abilities.explodingRing || this.abilities.heal;
+
+        if (!ability) return;
 
         // If not at max charges, recharge over time
         if (ability.currentCharges < ability.maxCharges) {
@@ -641,6 +712,90 @@ export class Game {
 
         // Play fireball sound
         audioManager.playFireball();
+    }
+
+    /**
+     * Try to use the Exploding Ring ability
+     */
+    useExplodingRing() {
+        const ability = this.abilities.explodingRing;
+
+        // Check if ability is available
+        if (ability.currentCharges <= 0) {
+            return false;
+        }
+
+        // Consume a charge
+        ability.currentCharges--;
+        ability.lastUsedTime = this.state.currentTime;
+
+        // Spawn the expanding ring
+        this.spawnExplodingRing();
+
+        return true;
+    }
+
+    /**
+     * Spawn an Exploding Ring
+     */
+    spawnExplodingRing() {
+        const ability = this.abilities.explodingRing;
+        const config = CONFIG.explodingRing;
+
+        const ring = {
+            x: this.player.worldX + CONFIG.player.size / 2,
+            y: this.player.worldY + CONFIG.player.size / 2,
+            currentRadius: ability.baseRadius,
+            maxRadius: ability.maxRadius,
+            expansionSpeed: ability.expansionSpeed,
+            damage: config.baseDamage * (ability.damageMultiplier || 1),
+            color: config.color,
+            ringWidth: config.ringWidth,
+            hitEnemies: new Set() // Track which enemies have been hit
+        };
+
+        this.expandingRings.push(ring);
+
+        // Play ability sound (using fireball sound for now)
+        audioManager.playFireball();
+    }
+
+    /**
+     * Try to use the Heal ability
+     */
+    useHeal() {
+        const ability = this.abilities.heal;
+
+        // Check if ability is available
+        if (ability.currentCharges <= 0) {
+            return false;
+        }
+
+        // Consume a charge
+        ability.currentCharges--;
+        ability.lastUsedTime = this.state.currentTime;
+
+        // Apply healing
+        this.applyHeal();
+
+        return true;
+    }
+
+    /**
+     * Apply healing to the player
+     */
+    applyHeal() {
+        const ability = this.abilities.heal;
+        const config = CONFIG.heal;
+
+        const healAmount = config.healAmount * (ability.healMultiplier || 1);
+        this.player.hp = Math.min(CONFIG.player.maxHP, this.player.hp + healAmount);
+
+        // Play ability sound (using fireball sound for now)
+        audioManager.playFireball();
+
+        // Visual feedback: reduce damage tint (reverse of damage effect)
+        this.player.damageTintAlpha = 0;
     }
 
     /**
@@ -783,6 +938,7 @@ export class Game {
         this.enemies.forEach(enemy => drawEnemy(this.ctx, enemy, this.state.camera));
         this.projectiles.forEach(proj => drawProjectile(this.ctx, proj, this.state.camera));
         this.explosions.forEach(explosion => drawExplosion(this.ctx, explosion, this.state.camera));
+        this.expandingRings.forEach(ring => drawExpandingRing(this.ctx, ring, this.state.camera));
 
         drawPlayer(this.ctx, this.player);
 
@@ -806,5 +962,157 @@ export class Game {
         audioManager.playGameOver();
 
         this.uiManager.showGameOver(this.state.startTime, this.state.currentTime, this.state.kills);
+    }
+
+    /**
+     * Handle boss defeat - pause game and show upgrade selection
+     */
+    handleBossDefeat() {
+        // Pause the game
+        this.state.isRunning = false;
+
+        // Reset boss flag so it can spawn again
+        this.bossSpawned = false;
+
+        // Get current ability (for now we only support one active ability)
+        const currentAbility = this.abilities.ghastFireball || this.abilities.explodingRing || this.abilities.heal;
+        currentAbility.name = this.getCurrentAbilityName();
+
+        // Available abilities to choose from
+        const availableAbilities = ['ghastFireball', 'explodingRing', 'heal'];
+
+        // Show upgrade selection UI
+        this.uiManager.showUpgradeSelection(currentAbility, availableAbilities, (type, abilityKey) => {
+            if (type === 'upgrade') {
+                this.applyAbilityUpgrade(abilityKey);
+            } else {
+                this.switchToNewAbility(abilityKey);
+            }
+
+            // Resume the game
+            this.state.isRunning = true;
+        });
+    }
+
+    /**
+     * Get the name of the current active ability
+     */
+    getCurrentAbilityName() {
+        if (this.abilities.ghastFireball) {
+            return CONFIG.ghastFireball.name;
+        } else if (this.abilities.explodingRing) {
+            return CONFIG.explodingRing.name;
+        } else if (this.abilities.heal) {
+            return CONFIG.heal.name;
+        }
+        return '';
+    }
+
+    /**
+     * Apply upgrade to existing ability
+     * @param {string} abilityKey - The ability to upgrade (e.g., 'ghastFireball')
+     */
+    applyAbilityUpgrade(abilityKey) {
+        const ability = this.abilities[abilityKey];
+        if (!ability) return;
+
+        const config = CONFIG[abilityKey];
+        const nextLevel = ability.level + 1;
+
+        if (nextLevel > 5) return; // Max level
+
+        const upgrade = config.upgrades[`level${nextLevel}`];
+        if (!upgrade) return;
+
+        // Apply upgrades based on the config
+        if (upgrade.cooldownReduction) {
+            ability.cooldownDuration *= (1 - upgrade.cooldownReduction);
+        }
+
+        if (upgrade.sizeIncrease) {
+            ability.size *= (1 + upgrade.sizeIncrease);
+        }
+
+        if (upgrade.radiusIncrease) {
+            ability.maxRadius = (ability.maxRadius || config.maxRadius) * (1 + upgrade.radiusIncrease);
+        }
+
+        if (upgrade.damageMultiplier) {
+            ability.damageMultiplier = (ability.damageMultiplier || 1) * upgrade.damageMultiplier;
+        }
+
+        if (upgrade.maxCharges !== undefined) {
+            ability.maxCharges = upgrade.maxCharges;
+            ability.currentCharges = upgrade.maxCharges;
+        }
+
+        if (upgrade.healIncrease) {
+            ability.healMultiplier = (ability.healMultiplier || 1) * (1 + upgrade.healIncrease);
+        }
+
+        if (upgrade.maxHPBonus) {
+            this.player.hp += upgrade.maxHPBonus;
+            CONFIG.player.maxHP += upgrade.maxHPBonus;
+        }
+
+        // Increment level
+        ability.level = nextLevel;
+
+        console.log(`Upgraded ${abilityKey} to level ${nextLevel}`);
+    }
+
+    /**
+     * Switch to a new ability
+     * @param {string} abilityKey - The new ability to switch to (e.g., 'explodingRing')
+     */
+    switchToNewAbility(abilityKey) {
+        // Clear all existing abilities
+        this.abilities = {};
+
+        // Initialize the new ability
+        this.initializeAbility(abilityKey);
+
+        console.log(`Switched to new ability: ${abilityKey}`);
+    }
+
+    /**
+     * Initialize an ability with default values from config
+     * @param {string} abilityKey - The ability to initialize
+     */
+    initializeAbility(abilityKey) {
+        const config = CONFIG[abilityKey];
+        if (!config) return;
+
+        if (abilityKey === 'ghastFireball') {
+            this.abilities.ghastFireball = {
+                level: 1,
+                maxCharges: config.maxCharges,
+                currentCharges: config.maxCharges,
+                lastUsedTime: 0,
+                cooldownDuration: config.cooldown,
+                size: config.size,
+                splashRadius: config.splashRadius
+            };
+        } else if (abilityKey === 'explodingRing') {
+            this.abilities.explodingRing = {
+                level: 1,
+                maxCharges: config.maxCharges,
+                currentCharges: config.maxCharges,
+                lastUsedTime: 0,
+                cooldownDuration: config.cooldown,
+                baseRadius: config.baseRadius,
+                maxRadius: config.maxRadius,
+                expansionSpeed: config.expansionSpeed
+            };
+        } else if (abilityKey === 'heal') {
+            this.abilities.heal = {
+                level: 1,
+                maxCharges: config.maxCharges,
+                currentCharges: config.maxCharges,
+                lastUsedTime: 0,
+                cooldownDuration: config.cooldown,
+                healMultiplier: 1
+            };
+        }
     }
 }

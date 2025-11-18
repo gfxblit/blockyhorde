@@ -381,6 +381,65 @@ export function drawExplosion(ctx, explosion, camera) {
 }
 
 /**
+ * Draws an expanding ring ability
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Object} ring - Ring object
+ * @param {Object} camera - Camera position
+ */
+export function drawExpandingRing(ctx, ring, camera) {
+    const screenX = ring.x - camera.x;
+    const screenY = ring.y - camera.y;
+
+    // Calculate alpha based on expansion progress
+    const progress = ring.currentRadius / ring.maxRadius;
+    const alpha = 1 - progress * 0.5; // Fade as it expands
+
+    // Parse the ring color
+    const color = ring.color;
+
+    // Draw outer glow
+    ctx.strokeStyle = `rgba(255, 136, 0, ${alpha * 0.3})`;
+    ctx.lineWidth = ring.ringWidth + 8;
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, ring.currentRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Draw main ring
+    ctx.strokeStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba').replace('#', 'rgba(');
+    // If it's a hex color, convert to rgba
+    if (color.startsWith('#')) {
+        const num = parseInt(color.replace('#', ''), 16);
+        const r = num >> 16;
+        const g = (num >> 8) & 0x00FF;
+        const b = num & 0x0000FF;
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    ctx.lineWidth = ring.ringWidth;
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, ring.currentRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Draw inner bright edge
+    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, ring.currentRadius - ring.ringWidth / 2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Draw energy particles around the ring
+    const particleCount = 12;
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2 + performance.now() * 0.002;
+        const px = screenX + Math.cos(angle) * ring.currentRadius;
+        const py = screenY + Math.sin(angle) * ring.currentRadius;
+        const particleSize = 3;
+
+        ctx.fillStyle = `rgba(255, 200, 100, ${alpha * 0.8})`;
+        ctx.fillRect(px - particleSize / 2, py - particleSize / 2, particleSize, particleSize);
+    }
+}
+
+/**
  * Draws an item
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Object} item - Item object

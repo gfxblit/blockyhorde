@@ -23,11 +23,14 @@ export class UIManager {
             abilityCharges: document.getElementById('abilityCharges'),
             difficultyNotification: document.getElementById('difficultyNotification'),
             itemPickupNotification: document.getElementById('itemPickupNotification'),
-            audioToggle: document.getElementById('audioToggle')
+            audioToggle: document.getElementById('audioToggle'),
+            upgradeSelection: document.getElementById('upgradeSelection'),
+            upgradeOptions: document.getElementById('upgradeOptions')
         };
 
         this.notificationTimeout = null;
         this.itemPickupTimeout = null;
+        this.upgradeSelectionCallback = null;
         this.initializeEventListeners();
     }
 
@@ -180,8 +183,12 @@ export class UIManager {
         this.updateTime(gameState.startTime, gameState.currentTime);
         this.updateKills(gameState.kills);
 
-        if (abilities && abilities.ghastFireball) {
-            this.updateAbilityCooldown(abilities.ghastFireball, gameState.currentTime);
+        // Update the active ability (only one can be active at a time)
+        if (abilities) {
+            const activeAbility = abilities.ghastFireball || abilities.explodingRing || abilities.heal;
+            if (activeAbility) {
+                this.updateAbilityCooldown(activeAbility, gameState.currentTime);
+            }
         }
     }
 
@@ -292,5 +299,152 @@ export class UIManager {
         this.itemPickupTimeout = setTimeout(() => {
             this.elements.itemPickupNotification.classList.remove('show');
         }, 1500);
+    }
+
+    /**
+     * Show upgrade selection screen after boss defeat
+     * @param {Object} currentAbility - The player's current ability object
+     * @param {Array} availableAbilities - Array of available ability config objects
+     * @param {Function} callback - Function to call when player makes a selection
+     */
+    showUpgradeSelection(currentAbility, availableAbilities, callback) {
+        this.upgradeSelectionCallback = callback;
+
+        // Clear previous options
+        this.elements.upgradeOptions.innerHTML = '';
+
+        // Add current ability upgrade option if not at max level
+        if (currentAbility && currentAbility.level < 5) {
+            const abilityKey = this.getAbilityKeyFromName(currentAbility.name);
+            const abilityConfig = CONFIG[abilityKey];
+            const nextLevel = currentAbility.level + 1;
+            const upgrade = abilityConfig.upgrades[`level${nextLevel}`];
+
+            const card = this.createUpgradeCard({
+                type: 'upgrade',
+                abilityKey: abilityKey,
+                title: abilityConfig.displayName,
+                level: nextLevel,
+                description: upgrade.description,
+                icon: this.getAbilityIcon(abilityKey),
+                color: abilityConfig.color
+            });
+
+            this.elements.upgradeOptions.appendChild(card);
+        }
+
+        // Add new ability options
+        availableAbilities.forEach(abilityKey => {
+            const abilityConfig = CONFIG[abilityKey];
+
+            // Skip if this is the current ability
+            if (currentAbility && currentAbility.name === abilityConfig.name) {
+                return;
+            }
+
+            const card = this.createUpgradeCard({
+                type: 'new',
+                abilityKey: abilityKey,
+                title: abilityConfig.displayName,
+                level: 1,
+                description: abilityConfig.description,
+                icon: this.getAbilityIcon(abilityKey),
+                color: abilityConfig.color
+            });
+
+            this.elements.upgradeOptions.appendChild(card);
+        });
+
+        // Show the modal
+        this.elements.upgradeSelection.style.display = 'block';
+    }
+
+    /**
+     * Create an upgrade card element
+     * @param {Object} options - Card options
+     * @returns {HTMLElement} The card element
+     */
+    createUpgradeCard(options) {
+        const card = document.createElement('div');
+        card.className = `upgrade-card ${options.type === 'upgrade' ? 'current-ability' : 'new-ability'}`;
+
+        const icon = document.createElement('div');
+        icon.className = 'upgrade-card-icon';
+        icon.style.backgroundColor = options.color;
+        icon.textContent = options.icon;
+
+        const title = document.createElement('div');
+        title.className = 'upgrade-card-title';
+        title.textContent = options.title;
+
+        const level = document.createElement('div');
+        level.className = 'upgrade-card-level';
+        level.textContent = `Level ${options.level}`;
+
+        const description = document.createElement('div');
+        description.className = 'upgrade-card-description';
+        description.textContent = options.description;
+
+        const effect = document.createElement('div');
+        effect.className = 'upgrade-card-effect';
+        effect.textContent = options.type === 'upgrade' ? 'UPGRADE' : 'SELECT';
+
+        card.appendChild(icon);
+        card.appendChild(title);
+        card.appendChild(level);
+        card.appendChild(description);
+        card.appendChild(effect);
+
+        // Add click handler
+        card.addEventListener('click', () => {
+            this.handleUpgradeSelection(options.type, options.abilityKey);
+        });
+
+        return card;
+    }
+
+    /**
+     * Handle upgrade card selection
+     * @param {string} type - 'upgrade' or 'new'
+     * @param {string} abilityKey - The ability key (e.g., 'ghastFireball')
+     */
+    handleUpgradeSelection(type, abilityKey) {
+        // Hide the modal
+        this.elements.upgradeSelection.style.display = 'none';
+
+        // Call the callback with the selection
+        if (this.upgradeSelectionCallback) {
+            this.upgradeSelectionCallback(type, abilityKey);
+            this.upgradeSelectionCallback = null;
+        }
+    }
+
+    /**
+     * Get ability icon emoji
+     * @param {string} abilityKey - The ability key
+     * @returns {string} Icon emoji
+     */
+    getAbilityIcon(abilityKey) {
+        const icons = {
+            ghastFireball: '💥',
+            explodingRing: '💫',
+            heal: '💚'
+        };
+        return icons[abilityKey] || '⭐';
+    }
+
+    /**
+     * Get ability key from ability name
+     * @param {string} name - The ability name (e.g., 'GhastFireball')
+     * @returns {string} The ability key (e.g., 'ghastFireball')
+     */
+    getAbilityKeyFromName(name) {
+        const mapping = {
+            'Ghast Fireball': 'ghastFireball',
+            'GhastFireball': 'ghastFireball',
+            'ExplodingRing': 'explodingRing',
+            'Heal': 'heal'
+        };
+        return mapping[name] || 'ghastFireball';
     }
 }

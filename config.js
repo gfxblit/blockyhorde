@@ -74,7 +74,9 @@ export const CONFIG = {
         color: '#ffff00'
     },
     ghastFireball: {
-        name: 'GhastFireball',
+        name: 'Ghast Fireball',
+        displayName: 'Ghast Fireball',
+        description: 'Launch a large explosive fireball',
         type: 'active',
         cooldown: 10000,              // 10 seconds in milliseconds
         size: 24,                     // Large white sphere
@@ -87,13 +89,49 @@ export const CONFIG = {
         currentLevel: 1,              // Track upgrade level
         // Upgrade levels configuration
         upgrades: {
-            level2: { cooldownReduction: 0.10 },      // 10% reduction → 54s
-            level3: { sizeIncrease: 0.25 },           // 25% size increase
-            level4: { cooldownReduction: 0.15 },      // 15% reduction → 46s
-            level5: {
-                maxCharges: 2,                        // 2 charges
-                damageMultiplier: 2.5                 // 250% base damage
-            }
+            level2: { cooldownReduction: 0.10, description: '10% faster cooldown' },
+            level3: { sizeIncrease: 0.25, description: '25% larger explosion' },
+            level4: { cooldownReduction: 0.15, description: '15% faster cooldown' },
+            level5: { maxCharges: 2, damageMultiplier: 2.5, description: '2 charges + 250% damage' }
+        }
+    },
+    explodingRing: {
+        name: 'ExplodingRing',
+        displayName: 'Exploding Ring',
+        description: 'Create an expanding ring that damages all enemies',
+        type: 'active',
+        cooldown: 12000,              // 12 seconds in milliseconds
+        baseRadius: 32,               // Starting radius (player size)
+        maxRadius: 256,               // Max expansion radius
+        expansionSpeed: 400,          // Pixels per second expansion
+        baseDamage: 2.0,              // 200% of player base damage
+        color: '#ff8800',             // Orange color
+        ringWidth: 16,                // Thickness of the ring
+        maxCharges: 1,
+        currentLevel: 1,
+        upgrades: {
+            level2: { cooldownReduction: 0.10, description: '10% faster cooldown' },
+            level3: { radiusIncrease: 0.30, description: '30% larger radius' },
+            level4: { damageMultiplier: 1.5, description: '50% more damage' },
+            level5: { maxCharges: 2, description: '2 charges' }
+        }
+    },
+    heal: {
+        name: 'Heal',
+        displayName: 'Divine Heal',
+        description: 'Restore health and gain temporary max HP',
+        type: 'active',
+        cooldown: 15000,              // 15 seconds in milliseconds
+        healAmount: 40,               // Restore 40 HP
+        maxHPBonus: 0,                // No bonus at level 1
+        color: '#00ff88',             // Green-cyan color
+        maxCharges: 1,
+        currentLevel: 1,
+        upgrades: {
+            level2: { healIncrease: 0.25, description: '25% more healing' },
+            level3: { cooldownReduction: 0.20, description: '20% faster cooldown' },
+            level4: { maxHPBonus: 20, description: '+20 permanent max HP' },
+            level5: { healIncrease: 0.50, description: '50% more healing' }
         }
     },
     difficulty: {
