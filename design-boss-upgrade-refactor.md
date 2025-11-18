@@ -388,20 +388,6 @@ test('performance: 100 enemies + 10 rings < 16ms frame time')
 
 ---
 
-## 📊 Timeline Estimate
-
-| PR | Scope | Effort | Dependencies |
-|----|-------|--------|--------------|
-| #1 | Test Infrastructure + Ability Manager | 2-3 days | None |
-| #2 | Boss Defeat State Machine | 1-2 days | PR #1 |
-| #3 | Ability Upgrade Tests | 2-3 days | PR #1 |
-| #4 | UI Testing & Polish | 1-2 days | PR #3 |
-| #5 | Integration & Docs | 1-2 days | PR #2, #3, #4 |
-
-**Total:** 7-12 days (sequential) or 4-6 days (parallel where possible)
-
----
-
 ## 🎯 Next Steps
 
 1. **Get feedback on this design doc**
