@@ -364,10 +364,11 @@ export class UIManager {
                 const handleSelect = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    this.hideSpecialUpgradeUI();
+                    // Call the callback BEFORE hiding the UI (since hiding sets callback to null)
                     if (this.specialSelectCallback) {
                         this.specialSelectCallback(key);
                     }
+                    this.hideSpecialUpgradeUI();
                 };
 
                 option.addEventListener('click', handleSelect);
