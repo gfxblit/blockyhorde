@@ -458,14 +458,14 @@ describe('Abilities System', () => {
 
     test('should update ability state after selection', () => {
       game.selectSpecial('explodingRing');
-      expect(game.abilities.ghastFireball.ringRadius).toBeDefined();
-      expect(game.abilities.ghastFireball.explosionCount).toBeDefined();
+      expect(game.abilities.explodingRing.ringRadius).toBeDefined();
+      expect(game.abilities.explodingRing.explosionCount).toBeDefined();
     });
 
     test('should reset charges on ability switch', () => {
-      game.abilities.ghastFireball.currentCharges = 0;
+      game.abilities.explodingRing.currentCharges = 0;
       game.selectSpecial('explodingRing');
-      expect(game.abilities.ghastFireball.currentCharges).toBe(game.abilities.ghastFireball.maxCharges);
+      expect(game.abilities.explodingRing.currentCharges).toBe(game.abilities.explodingRing.maxCharges);
     });
   });
 
