@@ -321,6 +321,29 @@ export function drawExplosion(ctx, explosion, camera) {
     const progress = explosion.elapsed / explosion.duration;
     const alpha = 1 - progress; // Fade out over time
 
+    // Check for custom color (e.g., healing effect)
+    const hasCustomColor = explosion.color;
+    let coreColor, ringColor, outerColor, indicatorColor;
+
+    if (hasCustomColor) {
+        // Parse hex color to RGB
+        const hex = explosion.color.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+
+        coreColor = { r: Math.min(255, r + 50), g: Math.min(255, g + 50), b: Math.min(255, b + 50) };
+        ringColor = { r, g, b };
+        outerColor = { r: Math.max(0, r - 30), g: Math.max(0, g - 30), b: Math.max(0, b - 30) };
+        indicatorColor = { r, g, b };
+    } else {
+        // Default fire colors
+        coreColor = { r: 255, g: 255, b: 200 };
+        ringColor = { r: 255, g: 140, b: 0 };
+        outerColor = { r: 255, g: 69, b: 0 };
+        indicatorColor = { r: 255, g: 200, b: 100 };
+    }
+
     // Draw expanding fire rings
     const numRings = 3;
     for (let i = 0; i < numRings; i++) {
@@ -329,23 +352,23 @@ export function drawExplosion(ctx, explosion, camera) {
         const ringRadius = explosion.radius * ringProgress;
         const ringAlpha = alpha * (1 - i * 0.2); // Outer rings fade faster
 
-        // Inner bright core (white/yellow)
+        // Inner bright core
         if (i === 0 && ringProgress < 0.3) {
-            ctx.fillStyle = `rgba(255, 255, 200, ${ringAlpha * 0.8})`;
+            ctx.fillStyle = `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, ${ringAlpha * 0.8})`;
             ctx.beginPath();
             ctx.arc(screenX, screenY, ringRadius * 0.4, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Orange fire ring
-        ctx.strokeStyle = `rgba(255, 140, 0, ${ringAlpha * 0.7})`;
+        // Main ring
+        ctx.strokeStyle = `rgba(${ringColor.r}, ${ringColor.g}, ${ringColor.b}, ${ringAlpha * 0.7})`;
         ctx.lineWidth = 8 - i * 2;
         ctx.beginPath();
         ctx.arc(screenX, screenY, ringRadius, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Red outer ring
-        ctx.strokeStyle = `rgba(255, 69, 0, ${ringAlpha * 0.5})`;
+        // Outer ring
+        ctx.strokeStyle = `rgba(${outerColor.r}, ${outerColor.g}, ${outerColor.b}, ${ringAlpha * 0.5})`;
         ctx.lineWidth = 6 - i * 1.5;
         ctx.beginPath();
         ctx.arc(screenX, screenY, ringRadius * 1.1, 0, Math.PI * 2);
@@ -355,7 +378,7 @@ export function drawExplosion(ctx, explosion, camera) {
     // Draw final AOE indicator circle at max radius
     if (progress > 0.5) {
         const indicatorAlpha = alpha * 0.3;
-        ctx.strokeStyle = `rgba(255, 200, 100, ${indicatorAlpha})`;
+        ctx.strokeStyle = `rgba(${indicatorColor.r}, ${indicatorColor.g}, ${indicatorColor.b}, ${indicatorAlpha})`;
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();

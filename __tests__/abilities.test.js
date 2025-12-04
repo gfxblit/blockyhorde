@@ -23,7 +23,8 @@ describe('Abilities System', () => {
       updateAll: jest.fn(),
       showGameOver: jest.fn(),
       showDifficultyNotification: jest.fn(),
-      showItemPickup: jest.fn()
+      showItemPickup: jest.fn(),
+      showSpecialUpgradeUI: jest.fn()
     };
 
     game = new Game(canvas, inputManager, uiManager);
@@ -414,6 +415,199 @@ describe('Abilities System', () => {
       // Explosion should be removed before checking radius
       // But if we check during the update before removal
       expect(game.explosions.length).toBe(0);
+    });
+  });
+
+  describe('Special Abilities System', () => {
+    test('should initialize with ghastFireball as current special', () => {
+      expect(game.currentSpecial).toBe('ghastFireball');
+    });
+
+    test('should initialize ghastFireball at level 1', () => {
+      expect(game.specialLevels.ghastFireball).toBe(1);
+    });
+
+    test('should initialize other specials at level 0', () => {
+      expect(game.specialLevels.explodingRing).toBe(0);
+      expect(game.specialLevels.heal).toBe(0);
+    });
+
+    test('should upgrade current special when selected', () => {
+      game.selectSpecial('ghastFireball');
+      expect(game.specialLevels.ghastFireball).toBe(2);
+    });
+
+    test('should switch to new special and set level 1', () => {
+      game.selectSpecial('explodingRing');
+      expect(game.currentSpecial).toBe('explodingRing');
+      expect(game.specialLevels.explodingRing).toBe(1);
+    });
+
+    test('should keep level when switching back to a special', () => {
+      game.selectSpecial('explodingRing'); // Switch to ring, level 1
+      game.selectSpecial('explodingRing'); // Upgrade to level 2
+      game.selectSpecial('ghastFireball'); // Switch back
+      expect(game.specialLevels.explodingRing).toBe(2);
+    });
+
+    test('should not exceed max level 5', () => {
+      game.specialLevels.ghastFireball = 5;
+      game.selectSpecial('ghastFireball');
+      expect(game.specialLevels.ghastFireball).toBe(5);
+    });
+
+    test('should update ability state after selection', () => {
+      game.selectSpecial('explodingRing');
+      expect(game.abilities.ghastFireball.ringRadius).toBeDefined();
+      expect(game.abilities.ghastFireball.explosionCount).toBeDefined();
+    });
+
+    test('should reset charges on ability switch', () => {
+      game.abilities.ghastFireball.currentCharges = 0;
+      game.selectSpecial('explodingRing');
+      expect(game.abilities.ghastFireball.currentCharges).toBe(game.abilities.ghastFireball.maxCharges);
+    });
+  });
+
+  describe('Special Stats Calculation', () => {
+    test('should return base stats for level 1', () => {
+      const stats = game.getSpecialStats('ghastFireball', 1);
+      expect(stats.cooldown).toBe(CONFIG.specials.ghastFireball.cooldown);
+      expect(stats.maxCharges).toBe(CONFIG.specials.ghastFireball.maxCharges);
+    });
+
+    test('should apply cooldown reduction at level 2', () => {
+      const stats = game.getSpecialStats('ghastFireball', 2);
+      const expected = CONFIG.specials.ghastFireball.cooldown * 0.9; // 10% reduction
+      expect(stats.cooldown).toBeCloseTo(expected, 0);
+    });
+
+    test('should apply cumulative upgrades', () => {
+      const stats = game.getSpecialStats('ghastFireball', 4);
+      // Level 2: -10%, Level 4: -15% more
+      const expected = CONFIG.specials.ghastFireball.cooldown * 0.9 * 0.85;
+      expect(stats.cooldown).toBeCloseTo(expected, 0);
+    });
+
+    test('should apply max charges upgrade at level 5', () => {
+      const stats = game.getSpecialStats('ghastFireball', 5);
+      expect(stats.maxCharges).toBe(2);
+    });
+
+    test('should calculate explodingRing stats correctly', () => {
+      const stats = game.getSpecialStats('explodingRing', 1);
+      expect(stats.explosionCount).toBe(CONFIG.specials.explodingRing.explosionCount);
+      expect(stats.ringRadius).toBe(CONFIG.specials.explodingRing.ringRadius);
+    });
+
+    test('should calculate heal stats correctly', () => {
+      const stats = game.getSpecialStats('heal', 1);
+      expect(stats.healAmount).toBe(CONFIG.specials.heal.healAmount);
+    });
+  });
+
+  describe('Exploding Ring Ability', () => {
+    beforeEach(() => {
+      game.selectSpecial('explodingRing');
+    });
+
+    test('should create multiple explosions in a ring', () => {
+      game.useExplodingRing();
+      expect(game.explosions.length).toBe(CONFIG.specials.explodingRing.explosionCount);
+    });
+
+    test('should damage enemies within explosion radius', () => {
+      game.enemies.push({
+        type: 'regular',
+        x: game.player.worldX + 100, // At ring radius
+        y: game.player.worldY,
+        hp: 10,
+        maxHP: 10
+      });
+
+      game.useExplodingRing();
+      expect(game.enemies[0].hp).toBeLessThan(10);
+    });
+
+    test('should use special ability correctly via useSpecialAbility', () => {
+      const initialExplosions = game.explosions.length;
+      game.useSpecialAbility();
+      expect(game.explosions.length).toBeGreaterThan(initialExplosions);
+    });
+  });
+
+  describe('Healing Burst Ability', () => {
+    beforeEach(() => {
+      game.selectSpecial('heal');
+    });
+
+    test('should restore health when used', () => {
+      game.player.hp = 50;
+      game.useHealingBurst();
+      expect(game.player.hp).toBeGreaterThan(50);
+    });
+
+    test('should not exceed max HP', () => {
+      game.player.hp = CONFIG.player.maxHP - 10;
+      game.useHealingBurst();
+      expect(game.player.hp).toBe(CONFIG.player.maxHP);
+    });
+
+    test('should create visual healing effect', () => {
+      game.useHealingBurst();
+      expect(game.explosions.length).toBe(1);
+      expect(game.explosions[0].color).toBe(CONFIG.specials.heal.color);
+    });
+
+    test('should show item pickup notification', () => {
+      game.player.hp = 50;
+      game.useHealingBurst();
+      expect(uiManager.showItemPickup).toHaveBeenCalled();
+    });
+
+    test('should use special ability correctly via useSpecialAbility', () => {
+      game.player.hp = 50;
+      game.useSpecialAbility();
+      expect(game.player.hp).toBeGreaterThan(50);
+    });
+  });
+
+  describe('Boss Defeat Special Upgrade', () => {
+    test('should trigger special upgrade on boss defeat', () => {
+      game.enemies.push({
+        type: 'boss',
+        x: 100,
+        y: 100,
+        hp: 1,
+        maxHP: 10
+      });
+      game.bossSpawned = true;
+
+      game.applyGhastFireballExplosion(100, 100, 10, 128);
+
+      expect(game.pendingSpecialUpgrade).toBe(true);
+      expect(uiManager.showSpecialUpgradeUI).toHaveBeenCalled();
+    });
+
+    test('should set bossSpawned to false after boss defeat', () => {
+      game.enemies.push({
+        type: 'boss',
+        x: 100,
+        y: 100,
+        hp: 1,
+        maxHP: 10
+      });
+      game.bossSpawned = true;
+
+      game.applyGhastFireballExplosion(100, 100, 10, 128);
+
+      expect(game.bossSpawned).toBe(false);
+    });
+
+    test('should resume game after special selection', () => {
+      game.pendingSpecialUpgrade = true;
+      game.selectSpecial('ghastFireball');
+      expect(game.pendingSpecialUpgrade).toBe(false);
     });
   });
 });

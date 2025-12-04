@@ -73,6 +73,67 @@ export const CONFIG = {
         interval: 500,
         color: '#ffff00'
     },
+    // Special abilities - player can equip one at a time
+    specials: {
+        ghastFireball: {
+            name: 'Ghast Fireball',
+            description: 'Launch an explosive fireball that deals splash damage',
+            icon: '🔥',
+            type: 'active',
+            cooldown: 10000,              // 10 seconds in milliseconds
+            size: 24,                     // Large white sphere
+            speed: 150,                   // 0.75x player speed (200 * 0.75)
+            baseDamage: 4.0,              // 400% of player base damage
+            splashRadius: 128,            // 4x player hitbox size (32 * 4)
+            splashDamageMultiplier: 0.5,  // 50% splash damage
+            color: '#f8f8f8',             // White color for the fireball
+            maxCharges: 1,                // Level 1-4: single charge
+            // Upgrade bonuses per level (cumulative)
+            upgrades: {
+                2: { cooldownReduction: 0.10, description: '-10% cooldown' },
+                3: { sizeIncrease: 0.25, splashIncrease: 0.25, description: '+25% explosion size' },
+                4: { cooldownReduction: 0.15, description: '-15% cooldown' },
+                5: { maxCharges: 2, damageMultiplier: 1.5, description: '+1 charge, +50% damage' }
+            }
+        },
+        explodingRing: {
+            name: 'Exploding Ring',
+            description: 'Create a ring of explosions around you',
+            icon: '💫',
+            type: 'active',
+            cooldown: 12000,              // 12 seconds
+            ringRadius: 100,              // Distance from player
+            explosionCount: 8,            // Number of explosions in the ring
+            baseDamage: 3.0,              // 300% of player base damage per explosion
+            splashRadius: 64,             // Each explosion splash radius
+            splashDamageMultiplier: 0.5,
+            color: '#ff6600',
+            maxCharges: 1,
+            upgrades: {
+                2: { explosionCountIncrease: 2, description: '+2 explosions' },
+                3: { radiusIncrease: 0.30, description: '+30% ring radius' },
+                4: { cooldownReduction: 0.20, description: '-20% cooldown' },
+                5: { maxCharges: 2, damageMultiplier: 1.5, description: '+1 charge, +50% damage' }
+            }
+        },
+        heal: {
+            name: 'Healing Burst',
+            description: 'Instantly restore health',
+            icon: '💚',
+            type: 'active',
+            cooldown: 15000,              // 15 seconds
+            healAmount: 30,               // Base heal amount
+            color: '#00ff88',
+            maxCharges: 1,
+            upgrades: {
+                2: { healIncrease: 10, description: '+10 heal amount' },
+                3: { cooldownReduction: 0.15, description: '-15% cooldown' },
+                4: { healIncrease: 15, description: '+15 heal amount' },
+                5: { maxCharges: 2, healMultiplier: 1.3, description: '+1 charge, +30% healing' }
+            }
+        }
+    },
+    // Legacy config for backwards compatibility
     ghastFireball: {
         name: 'GhastFireball',
         type: 'active',

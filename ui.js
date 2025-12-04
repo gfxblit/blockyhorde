@@ -23,11 +23,14 @@ export class UIManager {
             abilityCharges: document.getElementById('abilityCharges'),
             difficultyNotification: document.getElementById('difficultyNotification'),
             itemPickupNotification: document.getElementById('itemPickupNotification'),
-            audioToggle: document.getElementById('audioToggle')
+            audioToggle: document.getElementById('audioToggle'),
+            specialUpgradeOverlay: document.getElementById('specialUpgradeOverlay'),
+            specialOptions: document.getElementById('specialOptions')
         };
 
         this.notificationTimeout = null;
         this.itemPickupTimeout = null;
+        this.specialSelectCallback = null;
         this.initializeEventListeners();
     }
 
@@ -292,5 +295,111 @@ export class UIManager {
         this.itemPickupTimeout = setTimeout(() => {
             this.elements.itemPickupNotification.classList.remove('show');
         }, 1500);
+    }
+
+    /**
+     * Show the special upgrade selection UI
+     * @param {string} currentSpecial - The currently equipped special ability key
+     * @param {Object} specialLevels - Object mapping special keys to their current levels
+     * @param {Function} onSelect - Callback function when a special is selected
+     */
+    showSpecialUpgradeUI(currentSpecial, specialLevels, onSelect) {
+        this.specialSelectCallback = onSelect;
+
+        // Clear existing options
+        this.elements.specialOptions.innerHTML = '';
+
+        // Get all available specials from config
+        const specials = CONFIG.specials;
+
+        // Create option for each special
+        for (const [key, config] of Object.entries(specials)) {
+            const level = specialLevels[key] || 0;
+            const isCurrent = key === currentSpecial;
+            const isMaxLevel = level >= 5;
+
+            const option = document.createElement('div');
+            option.className = 'special-option';
+
+            if (isCurrent) {
+                option.classList.add('current');
+                if (!isMaxLevel) {
+                    option.classList.add('upgrade');
+                }
+            }
+
+            // Determine what happens on selection
+            let actionText = '';
+            let upgradeBonus = '';
+
+            if (isCurrent && !isMaxLevel) {
+                // Upgrade current special
+                const nextLevel = level + 1;
+                const upgradeConfig = config.upgrades[nextLevel];
+                if (upgradeConfig) {
+                    upgradeBonus = upgradeConfig.description;
+                }
+                actionText = `Level ${level} → ${nextLevel}`;
+            } else if (!isCurrent && level === 0) {
+                // Pick new special (starts at level 1)
+                actionText = 'NEW - Level 1';
+            } else if (!isCurrent) {
+                // Switch to different special (keep its level)
+                actionText = `Switch (Level ${level})`;
+            } else {
+                // Max level
+                actionText = 'MAX LEVEL';
+            }
+
+            option.innerHTML = `
+                <span class="special-icon">${config.icon}</span>
+                <div class="special-name">${config.name}</div>
+                <div class="special-level">${actionText}</div>
+                <div class="special-description">${config.description}</div>
+                ${upgradeBonus ? `<div class="special-upgrade-bonus">${upgradeBonus}</div>` : ''}
+            `;
+
+            // Add click handler (unless max level on current)
+            if (!(isCurrent && isMaxLevel)) {
+                const handleSelect = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.hideSpecialUpgradeUI();
+                    if (this.specialSelectCallback) {
+                        this.specialSelectCallback(key);
+                    }
+                };
+
+                option.addEventListener('click', handleSelect);
+                option.addEventListener('touchend', handleSelect, { passive: false });
+            } else {
+                option.style.opacity = '0.6';
+                option.style.cursor = 'not-allowed';
+            }
+
+            this.elements.specialOptions.appendChild(option);
+        }
+
+        // Show the overlay
+        this.elements.specialUpgradeOverlay.classList.add('show');
+
+        // Play a sound effect
+        audioManager.playLevelUp();
+    }
+
+    /**
+     * Hide the special upgrade UI
+     */
+    hideSpecialUpgradeUI() {
+        this.elements.specialUpgradeOverlay.classList.remove('show');
+        this.specialSelectCallback = null;
+    }
+
+    /**
+     * Check if special upgrade UI is currently showing
+     * @returns {boolean}
+     */
+    isSpecialUpgradeUIVisible() {
+        return this.elements.specialUpgradeOverlay.classList.contains('show');
     }
 }

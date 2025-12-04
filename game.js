@@ -77,17 +77,132 @@ export class Game {
         };
         this.lastDifficultyLevel = 0;
 
-        // Active abilities
+        // Special abilities system
+        this.currentSpecial = 'ghastFireball'; // Currently equipped special
+        this.specialLevels = {
+            ghastFireball: 1,
+            explodingRing: 0,
+            heal: 0
+        };
+
+        // Active ability state (for the current special)
         this.abilities = {
             ghastFireball: {
                 level: 1,
-                maxCharges: CONFIG.ghastFireball.maxCharges,
-                currentCharges: CONFIG.ghastFireball.maxCharges,
+                maxCharges: CONFIG.specials.ghastFireball.maxCharges,
+                currentCharges: CONFIG.specials.ghastFireball.maxCharges,
                 lastUsedTime: 0,
-                cooldownDuration: CONFIG.ghastFireball.cooldown,
-                size: CONFIG.ghastFireball.size,
-                splashRadius: CONFIG.ghastFireball.splashRadius
+                cooldownDuration: CONFIG.specials.ghastFireball.cooldown,
+                size: CONFIG.specials.ghastFireball.size,
+                splashRadius: CONFIG.specials.ghastFireball.splashRadius
             }
+        };
+
+        // Pending special upgrade (for boss defeat UI)
+        this.pendingSpecialUpgrade = false;
+    }
+
+    /**
+     * Get computed stats for a special ability based on its level
+     */
+    getSpecialStats(specialKey, level) {
+        const config = CONFIG.specials[specialKey];
+        if (!config) return null;
+
+        // Start with base stats
+        const stats = {
+            cooldown: config.cooldown,
+            maxCharges: config.maxCharges,
+            damage: config.baseDamage || 0,
+            healAmount: config.healAmount || 0,
+            size: config.size || 0,
+            splashRadius: config.splashRadius || 0,
+            ringRadius: config.ringRadius || 0,
+            explosionCount: config.explosionCount || 0
+        };
+
+        // Apply upgrade bonuses cumulatively
+        for (let lvl = 2; lvl <= level; lvl++) {
+            const upgrade = config.upgrades[lvl];
+            if (!upgrade) continue;
+
+            if (upgrade.cooldownReduction) {
+                stats.cooldown *= (1 - upgrade.cooldownReduction);
+            }
+            if (upgrade.maxCharges) {
+                stats.maxCharges = upgrade.maxCharges;
+            }
+            if (upgrade.damageMultiplier) {
+                stats.damage *= upgrade.damageMultiplier;
+            }
+            if (upgrade.sizeIncrease) {
+                stats.size *= (1 + upgrade.sizeIncrease);
+            }
+            if (upgrade.splashIncrease) {
+                stats.splashRadius *= (1 + upgrade.splashIncrease);
+            }
+            if (upgrade.healIncrease) {
+                stats.healAmount += upgrade.healIncrease;
+            }
+            if (upgrade.healMultiplier) {
+                stats.healAmount *= upgrade.healMultiplier;
+            }
+            if (upgrade.explosionCountIncrease) {
+                stats.explosionCount += upgrade.explosionCountIncrease;
+            }
+            if (upgrade.radiusIncrease) {
+                stats.ringRadius *= (1 + upgrade.radiusIncrease);
+            }
+        }
+
+        return stats;
+    }
+
+    /**
+     * Switch to a different special ability or upgrade the current one
+     */
+    selectSpecial(specialKey) {
+        const previousSpecial = this.currentSpecial;
+
+        if (specialKey === this.currentSpecial) {
+            // Upgrade current special
+            if (this.specialLevels[specialKey] < 5) {
+                this.specialLevels[specialKey]++;
+            }
+        } else {
+            // Switch to new special
+            if (this.specialLevels[specialKey] === 0) {
+                this.specialLevels[specialKey] = 1;
+            }
+            this.currentSpecial = specialKey;
+        }
+
+        // Update ability state for the new/upgraded special
+        this.updateCurrentAbility();
+
+        // Resume the game
+        this.pendingSpecialUpgrade = false;
+    }
+
+    /**
+     * Update the current ability state based on selected special and level
+     */
+    updateCurrentAbility() {
+        const level = this.specialLevels[this.currentSpecial];
+        const stats = this.getSpecialStats(this.currentSpecial, level);
+
+        this.abilities.ghastFireball = {
+            level: level,
+            maxCharges: stats.maxCharges,
+            currentCharges: stats.maxCharges, // Reset charges on upgrade/switch
+            lastUsedTime: 0,
+            cooldownDuration: stats.cooldown,
+            size: stats.size,
+            splashRadius: stats.splashRadius,
+            damage: stats.damage,
+            healAmount: stats.healAmount,
+            ringRadius: stats.ringRadius,
+            explosionCount: stats.explosionCount
         };
     }
 
@@ -112,6 +227,14 @@ export class Game {
     gameLoop(timestamp) {
         if (!this.state.isRunning) return;
 
+        // Pause game updates while special upgrade UI is showing
+        if (this.pendingSpecialUpgrade) {
+            // Still render and continue the loop, but don't update game logic
+            this.render();
+            requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
+            return;
+        }
+
         const deltaTime = Math.min((timestamp - this.state.lastUpdate) / 1000, 0.1);
         this.state.lastUpdate = timestamp;
         this.state.currentTime = timestamp;
@@ -132,7 +255,7 @@ export class Game {
 
         // Check for ability input
         if (this.inputManager.isAbilityPressed()) {
-            this.useGhastFireball();
+            this.useSpecialAbility();
         }
 
         // Spawn entities
@@ -445,6 +568,7 @@ export class Game {
                                 if (isBossEnemy) {
                                     audioManager.playBossDeath();
                                     this.bossSpawned = false;
+                                    this.triggerSpecialUpgrade();
                                 } else {
                                     audioManager.playEnemyHit();
                                 }
@@ -534,6 +658,8 @@ export class Game {
         if (enemiesHit > 0) {
             if (bossKilled) {
                 audioManager.playBossDeath();
+                this.bossSpawned = false;
+                this.triggerSpecialUpgrade();
             } else {
                 audioManager.playEnemyHit();
             }
@@ -567,9 +693,9 @@ export class Game {
     }
 
     /**
-     * Try to use the Ghast Fireball ability
+     * Use the currently equipped special ability
      */
-    useGhastFireball() {
+    useSpecialAbility() {
         const ability = this.abilities.ghastFireball;
 
         // Check if ability is available
@@ -581,10 +707,27 @@ export class Game {
         ability.currentCharges--;
         ability.lastUsedTime = this.state.currentTime;
 
-        // Spawn the ghast fireball
-        this.spawnGhastFireball();
+        // Execute the appropriate special ability
+        switch (this.currentSpecial) {
+            case 'ghastFireball':
+                this.spawnGhastFireball();
+                break;
+            case 'explodingRing':
+                this.useExplodingRing();
+                break;
+            case 'heal':
+                this.useHealingBurst();
+                break;
+        }
 
         return true;
+    }
+
+    /**
+     * Try to use the Ghast Fireball ability (legacy method for compatibility)
+     */
+    useGhastFireball() {
+        return this.useSpecialAbility();
     }
 
     /**
@@ -630,9 +773,9 @@ export class Game {
             type: 'ghastFireball',
             x: this.player.worldX + CONFIG.player.size / 2,
             y: this.player.worldY + CONFIG.player.size / 2,
-            vx: Math.cos(angle) * CONFIG.ghastFireball.speed,
-            vy: Math.sin(angle) * CONFIG.ghastFireball.speed,
-            damage: CONFIG.ghastFireball.baseDamage,
+            vx: Math.cos(angle) * CONFIG.specials.ghastFireball.speed,
+            vy: Math.sin(angle) * CONFIG.specials.ghastFireball.speed,
+            damage: ability.damage || CONFIG.specials.ghastFireball.baseDamage,
             size: ability.size,
             splashRadius: ability.splashRadius
         };
@@ -641,6 +784,134 @@ export class Game {
 
         // Play fireball sound
         audioManager.playFireball();
+    }
+
+    /**
+     * Use the Exploding Ring ability - creates explosions in a ring around the player
+     */
+    useExplodingRing() {
+        const ability = this.abilities.ghastFireball;
+        const config = CONFIG.specials.explodingRing;
+
+        const ringRadius = ability.ringRadius || config.ringRadius;
+        const explosionCount = ability.explosionCount || config.explosionCount;
+        const damage = ability.damage || config.baseDamage;
+        const splashRadius = config.splashRadius;
+
+        const playerCenterX = this.player.worldX + CONFIG.player.size / 2;
+        const playerCenterY = this.player.worldY + CONFIG.player.size / 2;
+
+        // Create explosions in a ring
+        for (let i = 0; i < explosionCount; i++) {
+            const angle = (i / explosionCount) * Math.PI * 2;
+            const explosionX = playerCenterX + Math.cos(angle) * ringRadius;
+            const explosionY = playerCenterY + Math.sin(angle) * ringRadius;
+
+            // Apply explosion damage at this location
+            this.applyExplosionDamage(explosionX, explosionY, damage, splashRadius);
+        }
+
+        // Play explosion sound
+        audioManager.playExplosion();
+    }
+
+    /**
+     * Apply explosion damage at a specific location (used by exploding ring)
+     */
+    applyExplosionDamage(explosionX, explosionY, baseDamage, radius) {
+        // Create visual explosion effect
+        this.explosions.push({
+            x: explosionX,
+            y: explosionY,
+            radius: 0,
+            maxRadius: radius,
+            duration: 0.4,
+            elapsed: 0
+        });
+
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const enemySize = enemy.type === 'boss' ? CONFIG.boss.size : CONFIG.enemy.size;
+            const enemyCenterX = enemy.x + enemySize / 2;
+            const enemyCenterY = enemy.y + enemySize / 2;
+
+            const dx = enemyCenterX - explosionX;
+            const dy = enemyCenterY - explosionY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= radius) {
+                // Apply damage (closer = more damage)
+                const damageMultiplier = 1 - (distance / radius) * 0.5;
+                const damage = baseDamage * damageMultiplier;
+
+                enemy.hp -= damage;
+
+                if (enemy.hp <= 0) {
+                    const isBoss = enemy.type === 'boss';
+                    this.dropItem(enemy.x, enemy.y);
+                    this.enemies.splice(i, 1);
+                    this.state.kills++;
+
+                    if (isBoss) {
+                        audioManager.playBossDeath();
+                        this.bossSpawned = false;
+                        this.triggerSpecialUpgrade();
+                    } else {
+                        audioManager.playEnemyHit();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Use the Healing Burst ability - instantly restore health
+     */
+    useHealingBurst() {
+        const ability = this.abilities.ghastFireball;
+        const config = CONFIG.specials.heal;
+
+        const healAmount = ability.healAmount || config.healAmount;
+
+        // Calculate actual heal amount (can't exceed max HP)
+        const actualHeal = Math.min(healAmount, CONFIG.player.maxHP - this.player.hp);
+
+        if (actualHeal > 0) {
+            this.player.hp = Math.min(this.player.hp + healAmount, CONFIG.player.maxHP);
+
+            // Show heal notification
+            this.uiManager.showItemPickup('health', Math.round(actualHeal));
+        }
+
+        // Create a visual healing effect (green explosion around player)
+        this.explosions.push({
+            x: this.player.worldX + CONFIG.player.size / 2,
+            y: this.player.worldY + CONFIG.player.size / 2,
+            radius: 0,
+            maxRadius: 60,
+            duration: 0.5,
+            elapsed: 0,
+            color: config.color
+        });
+
+        // Play a sound
+        audioManager.playItemPickup();
+    }
+
+    /**
+     * Trigger the special upgrade UI after boss defeat
+     */
+    triggerSpecialUpgrade() {
+        this.pendingSpecialUpgrade = true;
+
+        // Show the upgrade UI
+        this.uiManager.showSpecialUpgradeUI(
+            this.currentSpecial,
+            this.specialLevels,
+            (selectedSpecial) => {
+                this.selectSpecial(selectedSpecial);
+            }
+        );
     }
 
     /**
