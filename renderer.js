@@ -279,7 +279,7 @@ function drawGhastFireball(ctx, projectile, camera) {
     const size = projectile.size;
 
     // Draw large white sphere with voxel style
-    createVoxelTexture(ctx, screenX, screenY, projectile.x, projectile.y, size, CONFIG.ghastFireball.color);
+    createVoxelTexture(ctx, screenX, screenY, projectile.x, projectile.y, size, CONFIG.specials.ghastFireball.color);
 
     // Add fiery details (orange/red pixels)
     ctx.fillStyle = '#ffa500';

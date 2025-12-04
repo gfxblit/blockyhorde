@@ -133,30 +133,6 @@ export const CONFIG = {
             }
         }
     },
-    // Legacy config for backwards compatibility
-    ghastFireball: {
-        name: 'GhastFireball',
-        type: 'active',
-        cooldown: 10000,              // 10 seconds in milliseconds
-        size: 24,                     // Large white sphere
-        speed: 150,                   // 0.75x player speed (200 * 0.75)
-        baseDamage: 4.0,              // 400% of player base damage
-        splashRadius: 128,            // 4x player hitbox size (32 * 4)
-        splashDamageMultiplier: 0.5,  // 50% splash damage
-        color: '#f8f8f8',             // White color for the fireball
-        maxCharges: 1,                // Level 1-4: single charge
-        currentLevel: 1,              // Track upgrade level
-        // Upgrade levels configuration
-        upgrades: {
-            level2: { cooldownReduction: 0.10 },      // 10% reduction → 54s
-            level3: { sizeIncrease: 0.25 },           // 25% size increase
-            level4: { cooldownReduction: 0.15 },      // 15% reduction → 46s
-            level5: {
-                maxCharges: 2,                        // 2 charges
-                damageMultiplier: 2.5                 // 250% base damage
-            }
-        }
-    },
     difficulty: {
         intervalReduction: 0.1,
         timePerReduction: 30,

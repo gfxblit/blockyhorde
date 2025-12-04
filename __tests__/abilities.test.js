@@ -33,15 +33,15 @@ describe('Abilities System', () => {
 
   describe('Ability Initialization', () => {
     test('should initialize with full charges', () => {
-      expect(game.abilities.ghastFireball.currentCharges).toBe(CONFIG.ghastFireball.maxCharges);
+      expect(game.abilities.ghastFireball.currentCharges).toBe(CONFIG.specials.ghastFireball.maxCharges);
     });
 
     test('should initialize with correct max charges', () => {
-      expect(game.abilities.ghastFireball.maxCharges).toBe(CONFIG.ghastFireball.maxCharges);
+      expect(game.abilities.ghastFireball.maxCharges).toBe(CONFIG.specials.ghastFireball.maxCharges);
     });
 
     test('should initialize with correct cooldown duration', () => {
-      expect(game.abilities.ghastFireball.cooldownDuration).toBe(CONFIG.ghastFireball.cooldown);
+      expect(game.abilities.ghastFireball.cooldownDuration).toBe(CONFIG.specials.ghastFireball.cooldown);
     });
 
     test('should initialize at level 1', () => {
@@ -49,7 +49,7 @@ describe('Abilities System', () => {
     });
 
     test('should initialize with correct splash radius', () => {
-      expect(game.abilities.ghastFireball.splashRadius).toBe(CONFIG.ghastFireball.splashRadius);
+      expect(game.abilities.ghastFireball.splashRadius).toBe(CONFIG.specials.ghastFireball.splashRadius);
     });
   });
 
@@ -108,18 +108,18 @@ describe('Abilities System', () => {
       game.abilities.ghastFireball.currentCharges = 0;
       game.abilities.ghastFireball.lastUsedTime = 1000;
 
-      game.updateAbilities(1000 + CONFIG.ghastFireball.cooldown);
+      game.updateAbilities(1000 + CONFIG.specials.ghastFireball.cooldown);
 
       expect(game.abilities.ghastFireball.currentCharges).toBe(1);
     });
 
     test('should not recharge beyond max charges', () => {
-      game.abilities.ghastFireball.currentCharges = CONFIG.ghastFireball.maxCharges;
+      game.abilities.ghastFireball.currentCharges = CONFIG.specials.ghastFireball.maxCharges;
       game.abilities.ghastFireball.lastUsedTime = 1000;
 
       game.updateAbilities(20000);
 
-      expect(game.abilities.ghastFireball.currentCharges).toBe(CONFIG.ghastFireball.maxCharges);
+      expect(game.abilities.ghastFireball.currentCharges).toBe(CONFIG.specials.ghastFireball.maxCharges);
     });
 
     test('should update lastUsedTime when charge is restored', () => {
@@ -127,7 +127,7 @@ describe('Abilities System', () => {
       game.abilities.ghastFireball.currentCharges = 0;
       game.abilities.ghastFireball.lastUsedTime = initialTime;
 
-      const rechargeTime = initialTime + CONFIG.ghastFireball.cooldown;
+      const rechargeTime = initialTime + CONFIG.specials.ghastFireball.cooldown;
       game.updateAbilities(rechargeTime);
 
       expect(game.abilities.ghastFireball.lastUsedTime).toBe(rechargeTime);
@@ -135,17 +135,17 @@ describe('Abilities System', () => {
 
     test('should recharge one charge at a time', () => {
       // If max charges is ever > 1
-      if (CONFIG.ghastFireball.maxCharges > 1) {
+      if (CONFIG.specials.ghastFireball.maxCharges > 1) {
         game.abilities.ghastFireball.maxCharges = 3;
         game.abilities.ghastFireball.currentCharges = 0;
         game.abilities.ghastFireball.lastUsedTime = 1000;
 
-        game.updateAbilities(1000 + CONFIG.ghastFireball.cooldown);
+        game.updateAbilities(1000 + CONFIG.specials.ghastFireball.cooldown);
 
         expect(game.abilities.ghastFireball.currentCharges).toBe(1);
       } else {
         // For current config where maxCharges is 1
-        expect(CONFIG.ghastFireball.maxCharges).toBe(1);
+        expect(CONFIG.specials.ghastFireball.maxCharges).toBe(1);
       }
     });
   });
@@ -205,7 +205,7 @@ describe('Abilities System', () => {
     test('should have correct base damage', () => {
       game.spawnGhastFireball();
 
-      expect(game.projectiles[0].damage).toBe(CONFIG.ghastFireball.baseDamage);
+      expect(game.projectiles[0].damage).toBe(CONFIG.specials.ghastFireball.baseDamage);
     });
 
     test('should have correct splash radius', () => {
@@ -228,7 +228,7 @@ describe('Abilities System', () => {
       const proj = game.projectiles[0];
       const speed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy);
 
-      expect(speed).toBeCloseTo(CONFIG.ghastFireball.speed, 1);
+      expect(speed).toBeCloseTo(CONFIG.specials.ghastFireball.speed, 1);
     });
 
     test('should spawn from player position', () => {
@@ -329,7 +329,7 @@ describe('Abilities System', () => {
       const damage = 4;
       game.applyGhastFireballExplosion(100, 100, damage, 128);
 
-      const expectedDamage = damage * CONFIG.ghastFireball.splashDamageMultiplier;
+      const expectedDamage = damage * CONFIG.specials.ghastFireball.splashDamageMultiplier;
       expect(game.enemies[0].hp).toBe(10 - expectedDamage);
     });
 

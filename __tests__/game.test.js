@@ -52,8 +52,8 @@ describe('Game Core Logic', () => {
     });
 
     test('should initialize abilities with full charges', () => {
-      expect(game.abilities.ghastFireball.currentCharges).toBe(CONFIG.ghastFireball.maxCharges);
-      expect(game.abilities.ghastFireball.maxCharges).toBe(CONFIG.ghastFireball.maxCharges);
+      expect(game.abilities.ghastFireball.currentCharges).toBe(CONFIG.specials.ghastFireball.maxCharges);
+      expect(game.abilities.ghastFireball.maxCharges).toBe(CONFIG.specials.ghastFireball.maxCharges);
     });
   });
 

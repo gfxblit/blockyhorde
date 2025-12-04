@@ -85,7 +85,7 @@ export class Game {
             heal: 0
         };
 
-        // Active ability state (for the current special)
+        // Active ability state (separate state per ability)
         this.abilities = {
             ghastFireball: {
                 level: 1,
@@ -94,7 +94,26 @@ export class Game {
                 lastUsedTime: 0,
                 cooldownDuration: CONFIG.specials.ghastFireball.cooldown,
                 size: CONFIG.specials.ghastFireball.size,
-                splashRadius: CONFIG.specials.ghastFireball.splashRadius
+                splashRadius: CONFIG.specials.ghastFireball.splashRadius,
+                damage: CONFIG.specials.ghastFireball.baseDamage
+            },
+            explodingRing: {
+                level: 0,
+                maxCharges: 0,
+                currentCharges: 0,
+                lastUsedTime: 0,
+                cooldownDuration: CONFIG.specials.explodingRing.cooldown,
+                ringRadius: CONFIG.specials.explodingRing.ringRadius,
+                explosionCount: CONFIG.specials.explodingRing.explosionCount,
+                damage: CONFIG.specials.explodingRing.baseDamage
+            },
+            heal: {
+                level: 0,
+                maxCharges: 0,
+                currentCharges: 0,
+                lastUsedTime: 0,
+                cooldownDuration: CONFIG.specials.heal.cooldown,
+                healAmount: CONFIG.specials.heal.healAmount
             }
         };
 
@@ -191,7 +210,11 @@ export class Game {
         const level = this.specialLevels[this.currentSpecial];
         const stats = this.getSpecialStats(this.currentSpecial, level);
 
-        this.abilities.ghastFireball = {
+        if (!stats) {
+            throw new Error(`Invalid special ability: ${this.currentSpecial}`);
+        }
+
+        this.abilities[this.currentSpecial] = {
             level: level,
             maxCharges: stats.maxCharges,
             currentCharges: stats.maxCharges, // Reset charges on upgrade/switch
@@ -633,11 +656,11 @@ export class Game {
             if (distance <= radius) {
                 // Direct hit gets full damage, splash gets 50%
                 const isDirectHit = this.checkCollision(
-                    explosionX, explosionY, CONFIG.ghastFireball.size,
+                    explosionX, explosionY, CONFIG.specials.ghastFireball.size,
                     enemy.x, enemy.y, CONFIG.enemy.size
                 );
 
-                const damage = isDirectHit ? baseDamage : baseDamage * CONFIG.ghastFireball.splashDamageMultiplier;
+                const damage = isDirectHit ? baseDamage : baseDamage * CONFIG.specials.ghastFireball.splashDamageMultiplier;
 
                 enemy.hp -= damage;
                 enemiesHit++;
@@ -680,7 +703,7 @@ export class Game {
      * Update ability cooldowns and recharge
      */
     updateAbilities(timestamp) {
-        const ability = this.abilities.ghastFireball;
+        const ability = this.abilities[this.currentSpecial];
 
         // If not at max charges, recharge over time
         if (ability.currentCharges < ability.maxCharges) {
@@ -696,7 +719,7 @@ export class Game {
      * Use the currently equipped special ability
      */
     useSpecialAbility() {
-        const ability = this.abilities.ghastFireball;
+        const ability = this.abilities[this.currentSpecial];
 
         // Check if ability is available
         if (ability.currentCharges <= 0) {
@@ -768,7 +791,7 @@ export class Game {
             }
         }
 
-        const ability = this.abilities.ghastFireball;
+        const ability = this.abilities[this.currentSpecial];
         const projectile = {
             type: 'ghastFireball',
             x: this.player.worldX + CONFIG.player.size / 2,
@@ -790,7 +813,7 @@ export class Game {
      * Use the Exploding Ring ability - creates explosions in a ring around the player
      */
     useExplodingRing() {
-        const ability = this.abilities.ghastFireball;
+        const ability = this.abilities[this.currentSpecial];
         const config = CONFIG.specials.explodingRing;
 
         const ringRadius = ability.ringRadius || config.ringRadius;
@@ -868,7 +891,7 @@ export class Game {
      * Use the Healing Burst ability - instantly restore health
      */
     useHealingBurst() {
-        const ability = this.abilities.ghastFireball;
+        const ability = this.abilities[this.currentSpecial];
         const config = CONFIG.specials.heal;
 
         const healAmount = ability.healAmount || config.healAmount;
