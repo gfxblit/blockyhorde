@@ -482,3 +482,183 @@ body {
         object-fit: contain;
     }
 }
+
+/* Special Upgrade UI */
+#specialUpgradeOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    animation: fadeIn 0.3s ease;
+}
+
+#specialUpgradeOverlay.show {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#specialUpgradePanel {
+    background: linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%);
+    border: 3px solid #5555aa;
+    border-radius: 12px;
+    padding: 25px 30px;
+    text-align: center;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    box-shadow: 0 0 30px rgba(85, 85, 170, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+#specialUpgradePanel h2 {
+    font-size: 28px;
+    color: #ffcc00;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 204, 0, 0.5);
+    letter-spacing: 2px;
+}
+
+.upgrade-subtitle {
+    font-size: 16px;
+    color: #aaa;
+    margin-bottom: 20px;
+}
+
+#specialOptions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.special-option {
+    background: linear-gradient(180deg, #333344 0%, #222233 100%);
+    border: 2px solid #444466;
+    border-radius: 10px;
+    padding: 15px;
+    width: 180px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.special-option:hover {
+    transform: translateY(-3px);
+    border-color: #6666aa;
+    box-shadow: 0 6px 20px rgba(85, 85, 170, 0.4);
+}
+
+.special-option:active {
+    transform: translateY(0);
+}
+
+.special-option.current {
+    border-color: #44aa44;
+    box-shadow: 0 0 15px rgba(68, 170, 68, 0.3);
+}
+
+.special-option.current::before {
+    content: 'EQUIPPED';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 9px;
+    background: #44aa44;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.special-option.upgrade {
+    border-color: #4488cc;
+}
+
+.special-option.upgrade::before {
+    content: 'UPGRADE';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 9px;
+    background: #4488cc;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.special-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.special-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.special-level {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.special-description {
+    font-size: 12px;
+    color: #aaa;
+    line-height: 1.4;
+}
+
+.special-upgrade-bonus {
+    font-size: 11px;
+    color: #88ff88;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #444;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 600px) {
+    #specialUpgradePanel {
+        padding: 20px 15px;
+    }
+
+    #specialUpgradePanel h2 {
+        font-size: 22px;
+    }
+
+    .upgrade-subtitle {
+        font-size: 14px;
+    }
+
+    #specialOptions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .special-option {
+        width: 90%;
+        max-width: 250px;
+    }
+
+    .special-icon {
+        font-size: 32px;
+    }
+
+    .special-name {
+        font-size: 14px;
+    }
+}

@@ -323,7 +323,7 @@ describe('Projectile System', () => {
       const proj = game.projectiles[0];
 
       expect(proj.type).toBe('ghastFireball');
-      expect(proj.damage).toBe(CONFIG.ghastFireball.baseDamage);
+      expect(proj.damage).toBe(CONFIG.specials.ghastFireball.baseDamage);
       expect(proj.splashRadius).toBe(game.abilities.ghastFireball.splashRadius);
       expect(proj.vx).toBeGreaterThan(0);
     });
@@ -380,9 +380,9 @@ describe('Projectile System', () => {
         y: 100,
         vx: 0,
         vy: 0,
-        damage: CONFIG.ghastFireball.baseDamage,
-        size: CONFIG.ghastFireball.size,
-        splashRadius: CONFIG.ghastFireball.splashRadius
+        damage: CONFIG.specials.ghastFireball.baseDamage,
+        size: CONFIG.specials.ghastFireball.size,
+        splashRadius: CONFIG.specials.ghastFireball.splashRadius
       });
 
       game.updateProjectiles(0.016);
@@ -406,15 +406,15 @@ describe('Projectile System', () => {
         y: 100,
         vx: 0,
         vy: 0,
-        damage: CONFIG.ghastFireball.baseDamage,
-        size: CONFIG.ghastFireball.size,
-        splashRadius: CONFIG.ghastFireball.splashRadius
+        damage: CONFIG.specials.ghastFireball.baseDamage,
+        size: CONFIG.specials.ghastFireball.size,
+        splashRadius: CONFIG.specials.ghastFireball.splashRadius
       });
 
       game.updateProjectiles(0.016);
 
       expect(game.explosions.length).toBe(1);
-      expect(game.explosions[0].maxRadius).toBe(CONFIG.ghastFireball.splashRadius);
+      expect(game.explosions[0].maxRadius).toBe(CONFIG.specials.ghastFireball.splashRadius);
     });
 
     test('should deal full damage on direct hit', () => {
@@ -432,14 +432,14 @@ describe('Projectile System', () => {
         y: 100,
         vx: 0,
         vy: 0,
-        damage: CONFIG.ghastFireball.baseDamage,
-        size: CONFIG.ghastFireball.size,
-        splashRadius: CONFIG.ghastFireball.splashRadius
+        damage: CONFIG.specials.ghastFireball.baseDamage,
+        size: CONFIG.specials.ghastFireball.size,
+        splashRadius: CONFIG.specials.ghastFireball.splashRadius
       });
 
       game.updateProjectiles(0.016);
 
-      expect(game.enemies[0].hp).toBe(10 - CONFIG.ghastFireball.baseDamage);
+      expect(game.enemies[0].hp).toBe(10 - CONFIG.specials.ghastFireball.baseDamage);
     });
 
     test('should deal splash damage to enemies not directly hit', () => {
@@ -458,9 +458,9 @@ describe('Projectile System', () => {
         y: 150,
         vx: 0,
         vy: 0,
-        damage: CONFIG.ghastFireball.baseDamage,
-        size: CONFIG.ghastFireball.size,
-        splashRadius: CONFIG.ghastFireball.splashRadius
+        damage: CONFIG.specials.ghastFireball.baseDamage,
+        size: CONFIG.specials.ghastFireball.size,
+        splashRadius: CONFIG.specials.ghastFireball.splashRadius
       });
 
       // Trigger the ghast fireball by hitting something

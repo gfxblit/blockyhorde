@@ -23,7 +23,8 @@ describe('Enemy System', () => {
       updateAll: jest.fn(),
       showGameOver: jest.fn(),
       showDifficultyNotification: jest.fn(),
-      showItemPickup: jest.fn()
+      showItemPickup: jest.fn(),
+      showSpecialUpgradeUI: jest.fn()
     };
 
     game = new Game(canvas, inputManager, uiManager);
