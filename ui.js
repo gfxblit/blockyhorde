@@ -177,14 +177,15 @@ export class UIManager {
      * @param {Object} gameState - Current game state
      * @param {Object} player - Player object
      * @param {Object} abilities - Abilities state object (optional)
+     * @param {string} currentSpecial - Currently equipped special ability key
      */
-    updateAll(gameState, player, abilities = null) {
+    updateAll(gameState, player, abilities = null, currentSpecial) {
         this.updateHealth(player.hp);
         this.updateTime(gameState.startTime, gameState.currentTime);
         this.updateKills(gameState.kills);
 
-        if (abilities && abilities.ghastFireball) {
-            this.updateAbilityCooldown(abilities.ghastFireball, gameState.currentTime);
+        if (abilities && currentSpecial && abilities[currentSpecial]) {
+            this.updateAbilityCooldown(abilities[currentSpecial], gameState.currentTime);
         }
     }
 

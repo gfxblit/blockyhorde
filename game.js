@@ -300,7 +300,7 @@ export class Game {
         this.render();
 
         // Update UI
-        this.uiManager.updateAll(this.state, this.player, this.abilities);
+        this.uiManager.updateAll(this.state, this.player, this.abilities, this.currentSpecial);
 
         // Continue loop
         requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
