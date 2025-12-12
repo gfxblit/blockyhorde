@@ -8,7 +8,12 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "serve": "node screenshot-server.js",
     "screenshot": "node puppeteer-screenshot.js",
-    "screenshot:interactive": "node puppeteer-screenshot.js http://localhost:3000 ./screenshots --interactive"
+    "screenshot:interactive": "node puppeteer-screenshot.js http://localhost:3000 ./screenshots --interactive",
+    "test:play": "node puppeteer-interactive-test.js basic",
+    "test:combat": "node puppeteer-interactive-test.js combat",
+    "test:abilities": "node puppeteer-interactive-test.js abilities",
+    "test:survival": "node puppeteer-interactive-test.js survival",
+    "test:custom": "node puppeteer-interactive-test.js custom"
   },
   "repository": {
     "type": "git",
