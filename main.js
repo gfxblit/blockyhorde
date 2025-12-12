@@ -7,6 +7,7 @@ import { InputManager } from './input.js';
 import { UIManager } from './ui.js';
 import { Game } from './game.js';
 import audioManager from './audio.js';
+import { initScreenshotCapture } from './screenshot-client.js';
 
 /**
  * Update canvas dimensions based on current viewport
@@ -103,7 +104,11 @@ function initialize() {
         }, 100);
     });
 
+    // Initialize screenshot capture (F9 to capture)
+    initScreenshotCapture(canvas);
+
     console.log('Blocky Horde initialized successfully!');
+    console.log('Press F9 to capture a screenshot');
 }
 
 // Start the game when DOM is loaded
